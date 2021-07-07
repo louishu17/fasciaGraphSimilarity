@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<title>FASCIA: Parallel Subgraph Counting</title>
+
+<xmp theme="cerulean" style="display:none;">
+
+![FASCIA logo](fascia.jpg)
+
+### Overview
+
+FASCIA is an open-source software package for determining approximate counts of tree-structured subgraphs 
+in large networks. It is a parallel implementation based on the
+[color-coding](http://dl.acm.org/citation.cfm?id=210337) method. Relative frequency information of various subgraphs
+serves as a very useful graph signature, and this information can be used for other graph analytics such as
+network alignment and clustering.
+
+### Features
+
+* Extremely fast and memory-efficient implementation.
+* Multicore parallelism (using OpenMP) and support for distributed-memory systems (MPI).
+* C++, mostly header-only implementation, no external dependencies, very easy to compile.
+* Wide range of graph analytics supported (see Usage Examples section below).
+
+### Installation
+
+Download the source code for the latest version of FASCIA ([version 1.0](http://sourceforge.net/projects/fascia-psu/files/)) from SourceForge.
+
+Alternately, get the latest source code from the git repository:
+
+`git clone git://git.code.sf.net/p/fascia-psu/code fascia-psu-code`
+
+Type make in the main directory to build the executable fascia. There is just one .cpp file to compile, and the
+rest of the code is header-only. 
+
+We have tested version 1.0 of FASCIA on Linux with the GNU C++ compiler (versions 4.8.2 and 4.4.7)
+and Intel C++ compiler (version 13.0.1), as well as on Windows 8 64-bit with Cygwin and GNU
+C++ compiler (version 4.8.2).  
+
+### Usage Examples
+
+* List all the supported functions.
+
+   `./fascia -h`
+
+* Given a template and a larger graph, determine the approximate count of the template in the 
+larger graph.
+
+   `./fascia -g test_small.graph -t template.graph`
+   
+* Vary the number of iterations. The default is to perform just one color-coding iteration. 
+
+   `./fascia -g test_small.graph -t template.graph -i 100`
+
+* Print execution time information, perform an outer loop parallelization. 
+
+   `./fascia -g hpylo.graph -t template.graph -i 100 -o -r`
+
+* Run FASCIA in batch mode. Get counts for several different templates (in this example, all tree templates of size 8).
+  
+   `./fascia -g hpylo.graph -b motif/graphs_n8_23/batchfile`
+   
+* Compute approximate counts of all tree-structured templates of a certain size (size 8 in the example below, 23 of them).  
+
+   `./fascia -g hpylo.graph -m 8`
+
+* Output per-vertex template counts.  
+   
+   `./fascia -g hpylo.graph -t template.graph -c`
+
+* Generate graphlet/treelet degree distribution.  
+
+   `./fascia -g hpylo.graph -t template.graph -d`
+
+* Plot graphlet/treelet degree distribution: see the R script plot_gdd.r.   
+   
+### Current Release Notes
+
+1. The first release is a simplified version of the shared-memory parallel algorithm presented in the ICPP 2013 paper. The code with MPI support is coming up shortly, and is available upon request.
+2. The current release only supports undirected graphs.
+3. Please see the files test_small.graph and template.graph for examples of the graph input format. Currently, an edge list text format is supported.
+
+### Support
+
+Please email George Slota (<gslota@psu.edu>) and Kamesh Madduri (<madduri@cse.psu.edu>).
+
+### Questions, Comments, Suggestions
+
+We'd love to hear from you. Please feel free to email us.
+
+### Citing FASCIA
+
+If you use version 1.0 of FASCIA, please cite our ICPP 2013 paper.
+> G. Slota and K. Madduri, "Fast approximate subgraph counting and enumeration," in Proc. 42nd Int'l. Conf. on Parallel Processing (ICPP), Oct. 2013.
+
+
+### Publications
+
+A distributed-memory implementation of FASCIA and network analysis examples using FASCIA are presented in our IPDPS 2014 paper.
+> G. Slota and K. Madduri, "Complex Network Analysis using Parallel Approximate Motif Counting," in Proc. 28th IEEE Int'l. Parallel and Distributed Processing Symp. (IPDPS), May 2014, to appear.
+
+The new shared-memory implementation (the basis for version 1.0) is discussed in the ICPP 2013 paper.
+> G. Slota and K. Madduri, "Fast approximate subgraph counting and enumeration," in Proc. 42nd Int'l. Conf. on Parallel Processing (ICPP), Oct. 2013.
+
+FASCIA was first presented as a poster at the 2013 SIAM Network Science workshop.
+> G. Slota and K. Madduri, "FASCIA: Fast Approximate Subgraph Counting and Enumeration," poster presentation, in Proc. SIAM Workshop on Network Science, San Diego, CA, July 2013.
+
+### Support 
+
+This work is supported by the NSF ACI award #1253881 and an NSF XSEDE research allocation.
+
+</xmp>
+
+<script src="http://strapdownjs.com/v/0.2/strapdown.js"></script>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-828189-5', 'sourceforge.net');
+  ga('send', 'pageview');
+</script>
+
+</html>
