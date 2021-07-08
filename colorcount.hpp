@@ -147,6 +147,14 @@ private:
   // This does a single counting for a given templates
   // Return the full scaled count for the template on the whole graph
 
+  int choose(int n, int k) {
+    if (k == 0){
+      return 1;
+    } 
+    return (n * choose(n - 1, k - 1)) / k;
+  }
+
+
   double template_count()
   {  
     // do random coloring for full graph
@@ -737,5 +745,3 @@ if (verbose) {
   // philox4x32_ukey_t philox_uk;
   // philox4x32_key_t philox_k;
 };
-
-
