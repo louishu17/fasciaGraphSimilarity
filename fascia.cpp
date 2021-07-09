@@ -233,7 +233,7 @@ void run_single(char* graph_file, char* template_file, bool labeled,
     }
   }
 
-  // printf("Count:\n\t%e\n", full_count);
+  printf("%e", full_count);
 
 if (timing || verbose) {
   elt = timer() - elt;
@@ -417,7 +417,7 @@ void run_compare_graphs(char* graph_fileA, char* graph_fileB, int motif,
     // printf("Target Statistic: %e", stat);    
   }
   double avg_stat = stat_sum / t;
-  printf("Average Statistic: %e", avg_stat);
+  printf("%e", avg_stat);
 }
 
 

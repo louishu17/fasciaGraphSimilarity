@@ -1,4 +1,4 @@
-CXX=g++
+CXX=/usr/local/bin/g++-11
 CXXFLAGS=-Wall -std=gnu++0x -fopenmp -O3
 CXXDEBUGFLAGS=-Wall -std=gnu++0x -fopenmp -g
 
