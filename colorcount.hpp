@@ -160,7 +160,8 @@ private:
     // do random coloring for full graph
     int num_verts = g->num_vertices();
     int num_edges = g->num_edges();
-    float edge_prob = (float) num_edges / choose(num_verts, 2);
+    float edge_prob = 0.8;
+    // float edge_prob = (float) num_edges / choose(num_verts, 2);
     //printf("%d %d %f\n", num_verts, num_edges, edge_prob);
     colors_g = new int[num_verts];    
 
@@ -410,12 +411,15 @@ if (verbose) {
               {
 
                 //outside node
-                if(index_nbrs[i] == 0){
-                  color_count += count_a * (0.0 - edge_prob) * dt.get_passive(i, comb_indexes_p[p]);
+                if(i != v) {
+                  if(index_nbrs[i] == 0){
+                    color_count += count_a * (0.0 - edge_prob) * dt.get_passive(i, comb_indexes_p[p]);
+                  }
+                  else{
+                    color_count += count_a * (1.0 - edge_prob) * dt.get_passive(i, comb_indexes_p[p]);
+                  }
                 }
-                else{
-                  color_count += count_a * (1.0 - edge_prob) * dt.get_passive(i, comb_indexes_p[p]);
-                }
+ 
 #if COLLECT_DATA                  
                 ++read_count_loop;
 #endif                  

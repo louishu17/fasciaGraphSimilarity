@@ -233,7 +233,7 @@ void run_single(char* graph_file, char* template_file, bool labeled,
     }
   }
 
-  // printf("Count:\n\t%e\n", full_count);
+  printf("Count:\n\t%e\n", full_count);
 
 if (timing || verbose) {
   elt = timer() - elt;
@@ -331,8 +331,8 @@ std::vector<double> run_batch(char* graph_file, char* batch_file, bool labeled,
       full_count += graph_count.do_full_count(&t, labels_t, iterations);
     }
 
-    // printf("%e\n", full_count);  
-    //check count_automorphissms
+    printf("%e\n", full_count);  
+    // check count_automorphissms
     // printf("num of automorphisms: %d\n", count_automorphisms(t));
     full_count_arr.push_back(full_count * sqrt(count_automorphisms(t)));
 
