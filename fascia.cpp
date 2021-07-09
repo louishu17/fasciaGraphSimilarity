@@ -17,6 +17,7 @@ using namespace std;
 #include <cstring>
 #include <unistd.h>
 #include <climits>
+#include <numeric>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -232,7 +233,7 @@ void run_single(char* graph_file, char* template_file, bool labeled,
     }
   }
 
-  printf("Count:\n\t%e\n", full_count);
+  // printf("Count:\n\t%e\n", full_count);
 
 if (timing || verbose) {
   elt = timer() - elt;
@@ -248,7 +249,7 @@ if (timing || verbose) {
 }
 
 
-void run_batch(char* graph_file, char* batch_file, bool labeled,
+std::vector<double> run_batch(char* graph_file, char* batch_file, bool labeled,
                 bool do_vert, bool do_gdd,
                 int iterations, 
                 bool do_outerloop, bool calc_auto, bool verbose)
@@ -263,6 +264,8 @@ void run_batch(char* graph_file, char* batch_file, bool labeled,
   int* labels_t;
   char* vert_file;
   char* gdd_file;
+
+  std::vector<double> full_count_arr;
 
   read_in_graph(g, graph_file, labeled, srcs_g, dsts_g, labels_g);
 
@@ -328,7 +331,11 @@ void run_batch(char* graph_file, char* batch_file, bool labeled,
       full_count += graph_count.do_full_count(&t, labels_t, iterations);
     }
 
-    printf("%e\n", full_count);  
+    // printf("%e\n", full_count);  
+    //check count_automorphissms
+    // printf("num of automorphisms: %d\n", count_automorphisms(t));
+    full_count_arr.push_back(full_count * sqrt(count_automorphisms(t)));
+
 
     delete [] srcs_t;
     delete [] dsts_t;
@@ -344,10 +351,12 @@ if (timing || verbose) {
   delete [] srcs_g;
   delete [] dsts_g;
   delete [] labels_g;
+
+  return full_count_arr;
 }
 
 
-void run_motif(char* graph_file, int motif, 
+std::vector<double> run_motif(char* graph_file, int motif, 
                 bool do_vert, bool do_gdd, 
                 int iterations, 
                 bool do_outerloop, bool calc_auto, bool verbose)
@@ -384,10 +393,31 @@ void run_motif(char* graph_file, int motif,
       break;
   }
 
-  run_batch(graph_file, motif_batchfile, false,
+  return run_batch(graph_file, motif_batchfile, false,
             do_vert, do_gdd,
             iterations, 
             do_outerloop, calc_auto, verbose);
+}
+
+void run_compare_graphs(char* graph_fileA, char* graph_fileB, int motif, 
+                bool do_vert, bool do_gdd, 
+                int iterations, 
+                bool do_outerloop, bool calc_auto, bool verbose)
+{
+  
+  double r = factorial(motif+1) / pow(motif+1, motif+1);
+  int t = floor(1 / pow(r,2));
+  double stat_sum = 0;
+  for(int i = 0; i < t; i++) {
+    std::vector<double> a = run_motif(graph_fileA, motif, do_vert, do_gdd, iterations, do_outerloop, calc_auto, verbose);
+    std::vector<double> b = run_motif(graph_fileB, motif, do_vert, do_gdd, iterations, do_outerloop, calc_auto, verbose);
+
+    double stat = std::inner_product(std::begin(a), std::end(a), std::begin(b), 0.0);
+    stat_sum += stat;
+    // printf("Target Statistic: %e", stat);    
+  }
+  double avg_stat = stat_sum / t;
+  printf("Average Statistic: %e", avg_stat);
 }
 
 
@@ -397,7 +427,8 @@ int main(int argc, char** argv)
   setbuf(stdout, NULL);
 
 
-  char* graph_file = NULL;
+  char* graph_fileA = NULL;
+  char* graph_fileB = NULL;
   char* template_file = NULL;
   char* batch_file = NULL;
   int iterations = 1;
@@ -407,10 +438,11 @@ int main(int argc, char** argv)
   bool do_gdd = false;
   bool do_vert = false;
   bool verbose = false;
+  bool compare_graphs = false;
   int motif = 0;
 
   char c;
-  while ((c = getopt (argc, argv, "g:t:b:i:m:acdvrohl")) != -1)
+  while ((c = getopt (argc, argv, "g:f:t:b:i:m:qacdvrohl")) != -1)
   {
     switch (c)
     {
@@ -421,7 +453,10 @@ int main(int argc, char** argv)
         labeled = true;
         break;
       case 'g':
-        graph_file = strdup(optarg);
+        graph_fileA = strdup(optarg);
+        break;
+      case 'f':
+        graph_fileB = strdup(optarg);
         break;
       case 't':
         template_file = strdup(optarg);
@@ -434,6 +469,9 @@ int main(int argc, char** argv)
         break;
       case 'm':
         motif = atoi(optarg);
+        break;
+      case 'q':
+        compare_graphs = true;
         break;
       case 'a':
         calculate_automorphism = false; 
@@ -475,7 +513,7 @@ int main(int argc, char** argv)
     printf("\nMotif option must be between [3,10]\n");    
     print_info(argv[0]);
   }
-  else if (graph_file == NULL)
+  else if (graph_fileA == NULL)
   { 
     printf("\nMust supply graph file\n");    
     print_info(argv[0]);
@@ -496,23 +534,29 @@ int main(int argc, char** argv)
     print_info(argv[0]);
   }
 
-  if (motif)
+  if(compare_graphs && motif) {
+    run_compare_graphs(graph_fileA, graph_fileB, motif,
+              do_vert, do_gdd, 
+              iterations, do_outerloop, calculate_automorphism, 
+              verbose);
+  }
+  else if (motif)
   {
-    run_motif(graph_file, motif, 
+    run_motif(graph_fileA, motif, 
               do_vert, do_gdd, 
               iterations, do_outerloop, calculate_automorphism, 
               verbose);
   }
   else if (template_file != NULL)
   {
-    run_single(graph_file, template_file, labeled,                
+    run_single(graph_fileA, template_file, labeled,                
                 do_vert, do_gdd,
                 iterations, do_outerloop, calculate_automorphism,
                 verbose);
   }
   else if (batch_file != NULL)
   {
-    run_batch(graph_file, batch_file, labeled,
+    run_batch(graph_fileA, batch_file, labeled,
                 do_vert, do_gdd,
                 iterations, do_outerloop, calculate_automorphism,
                 verbose);

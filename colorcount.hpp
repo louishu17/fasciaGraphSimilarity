@@ -117,7 +117,7 @@ if (verbose) {
     double prob_colorful = factorial(num_colors) / 
         ( factorial(num_colors - t->num_vertices()) * pow(num_colors, t->num_vertices()) );
     int num_auto = calculate_automorphisms ? count_automorphisms(*t) : 1;    
-    final_count = floor(final_count / (prob_colorful * (double)num_auto) + 0.5);
+    final_count = final_count / (double) num_auto;
 
 if (verbose) {    
     printf("Probability colorful: %f\n", prob_colorful);
@@ -185,6 +185,11 @@ private:
       int color = r[0] % num_colors;
       colors_g[v] = color;
     }
+
+    // for(int i = 0; i < num_verts; i++) {
+    //   printf("%d ", colors_g[i]);
+    // }
+    // printf("\n");
 }
 
     // start doing the counting, starting at bottom of partition tree
