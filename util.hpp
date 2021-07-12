@@ -559,3 +559,4 @@ int** init_choose_table(int num_colors)
       
   return choose_table;
 }
+

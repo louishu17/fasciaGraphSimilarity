@@ -160,7 +160,7 @@ private:
     // do random coloring for full graph
     int num_verts = g->num_vertices();
     int num_edges = g->num_edges();
-    float edge_prob = 0.8;
+    float edge_prob = 0.001;
     // float edge_prob = (float) num_edges / choose(num_verts, 2);
     //printf("%d %d %f\n", num_verts, num_edges, edge_prob);
     colors_g = new int[num_verts];    
@@ -172,7 +172,7 @@ private:
     r123::Philox4x32 rng;
     r123::Philox4x32::ctr_type rng_ctr = {{}};
     r123::Philox4x32::ukey_type rng_uk={{}};
-    rng_uk[0] = 42; /* user-supplied key */
+    rng_uk[0] = rand(); /* user-supplied key */
     r123::Philox4x32::key_type rng_key = rng_uk;
 
 #pragma omp for

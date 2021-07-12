@@ -19,6 +19,11 @@ using namespace std;
 #include <climits>
 #include <numeric>
 
+#include <stdlib.h>
+#include <random>
+#include <string>
+#include <tuple>
+
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -233,7 +238,7 @@ void run_single(char* graph_file, char* template_file, bool labeled,
     }
   }
 
-  printf("Count:\n\t%e\n", full_count);
+  printf("%e\n", full_count);
 
 if (timing || verbose) {
   elt = timer() - elt;
@@ -331,7 +336,7 @@ std::vector<double> run_batch(char* graph_file, char* batch_file, bool labeled,
       full_count += graph_count.do_full_count(&t, labels_t, iterations);
     }
 
-    printf("%e\n", full_count);  
+    // printf("%e\n", full_count);  
     // check count_automorphissms
     // printf("num of automorphisms: %d\n", count_automorphisms(t));
     full_count_arr.push_back(full_count * sqrt(count_automorphisms(t)));
@@ -404,22 +409,197 @@ void run_compare_graphs(char* graph_fileA, char* graph_fileB, int motif,
                 int iterations, 
                 bool do_outerloop, bool calc_auto, bool verbose)
 {
-  
-  double r = factorial(motif+1) / pow(motif+1, motif+1);
-  int t = floor(1 / pow(r,2));
-  double stat_sum = 0;
-  for(int i = 0; i < t; i++) {
-    std::vector<double> a = run_motif(graph_fileA, motif, do_vert, do_gdd, iterations, do_outerloop, calc_auto, verbose);
-    std::vector<double> b = run_motif(graph_fileB, motif, do_vert, do_gdd, iterations, do_outerloop, calc_auto, verbose);
+  std::vector<double> a = run_motif(graph_fileA, motif, do_vert, do_gdd, iterations, do_outerloop, calc_auto, verbose);
+  std::vector<double> b = run_motif(graph_fileB, motif, do_vert, do_gdd, iterations, do_outerloop, calc_auto, verbose);
 
-    double stat = std::inner_product(std::begin(a), std::end(a), std::begin(b), 0.0);
-    stat_sum += stat;
-    // printf("Target Statistic: %e", stat);    
-  }
-  double avg_stat = stat_sum / t;
-  printf("Average Statistic: %e", avg_stat);
+  double stat = std::inner_product(std::begin(a), std::end(a), std::begin(b), 0.0);
+  printf("%e", stat);
 }
 
+void generate_graph(int n, float p, char filename[50])
+{
+// generates erdos-renyi graph with n nodes, probability p, saves it to a file with number file_num
+
+    ofstream file(filename);
+
+    int count = 0;
+    vector <tuple<int, int>> edges;
+    tuple<int, int> tup;
+
+    for (int i = 0; i < n; ++i) {
+        for (int j = i + 1; j < n; ++j) {
+            float r = ((float) rand() / (RAND_MAX));
+            if (r < p) {
+                ++count;
+                tup = make_tuple(i, j);
+                edges.push_back(tup);
+            }
+        }
+    }
+
+    file << n << '\n';
+    file << count;
+
+    for (auto it = edges.begin(); it != edges.end(); ++it) {
+        file << '\n' << get<0>(*it) << ' ' << get<1>(*it);
+    }
+
+    file.close();
+
+}
+
+void sim1() {
+    //runs simulation 1
+
+    float p = 0.01;
+    char tree_file[] = "template.graph";
+
+    int iterations = 1000;
+    int m = 20;
+
+    std::vector<int> m_sizes;
+
+    m_sizes.push_back(100);
+    m_sizes.push_back(500);
+    m_sizes.push_back(1000);
+    m_sizes.push_back(10000);
+
+  
+
+    for (const int& i : m_sizes) {
+      cout << i << "\n";
+      cout << "\n[";
+      for(int j = 0; j < m; ++j) {
+        char graph_file [50];
+        sprintf (graph_file, "graphs/%d.txt", i);
+        generate_graph(i, p, graph_file);
+        
+        run_single(graph_file, tree_file, false, false, false, iterations, true, true, false);
+        cout << ", ";
+        cout.flush();   
+
+
+      }
+      cout<<'\b';
+      cout<<'\b';
+      cout<<"]\n";
+      cout.flush();      
+    }
+}
+
+void select_edges(float s, int m_rep, char in [50], char out [50]) {
+
+    int n;
+    int num_edges;
+
+    ifstream og_erd_ren(in);
+    og_erd_ren >> n;
+    og_erd_ren >> num_edges;
+
+    int count = 0;
+    vector <tuple<int, int>> edges;
+    int edge_1;
+    int edge_2;
+    tuple<int, int> tup;
+
+    while (og_erd_ren >> edge_1 >> edge_2) {
+        float r = ((float) rand() / (RAND_MAX));
+        if (r < s) {
+            ++count;
+            tup = make_tuple(edge_1, edge_2);
+            edges.push_back(tup);
+            }
+    }
+    og_erd_ren.close();
+
+    ofstream out_file(out);
+
+    out_file << n << '\n';
+    out_file << count;
+
+    for (auto it = edges.begin(); it != edges.end(); ++it) {
+        out_file << '\n' << get<0>(*it) << ' ' << get<1>(*it);
+    }
+    out_file.close();
+
+}
+
+void sim2_corr(int n, float p, float s, int tree_len, int m_rep, int iterations) {
+
+
+    const char folder [] = "sim2_corr/";
+    char in [50];
+    sprintf(in, "%s%d_og.txt", folder, m_rep);
+    char graphA [50];
+    sprintf(graphA, "%s%d_%d_corr.txt", folder, m_rep, 1);
+    char graphB [50];
+    sprintf(graphB, "%s%d_%d_corr.txt", folder, m_rep, 2);
+    
+    generate_graph(n, p, in);
+    select_edges(s, m_rep, in, graphA);
+    select_edges(s, m_rep, in, graphB);
+
+    run_compare_graphs(graphA, graphB, tree_len+1, false, false, iterations, true, true, false);
+        
+}
+
+
+void sim2_ind(int n, float p, float s, int tree_len, int m_rep, int iterations) {
+
+    const char folder [] = "sim2_ind/";
+    char graphA [50];
+    sprintf(graphA, "%s%d_%d_ind.txt", folder, m_rep, 1);
+    char graphB [50];
+    sprintf(graphB, "%s%d_%d_ind.txt", folder, m_rep, 2);
+    
+    generate_graph(n, p, graphA);
+    generate_graph(n, p, graphB);
+
+    //execute compare graphs
+    run_compare_graphs(graphA, graphB, tree_len+1, false, false, iterations, true, true, false);
+}
+
+void sim2() {
+
+    int n = 100;
+    float p = 0.001;
+    float s = 1;
+    int tree_len = 6;
+    int m = 20;
+
+    // double r = (double) factorial(tree_len+1) / pow(tree_len+1, tree_len+1);
+    // int t = floor(1/ pow(r,2));
+
+    int t = 20;
+
+    cout << "\n[";
+
+    for (int m_rep = 1; m_rep < m + 1; ++m_rep) {
+        sim2_corr(n, p, s, tree_len, m_rep, t);
+
+        cout << ", ";
+        cout.flush();
+    }
+
+    cout<<'\b';
+    cout<<'\b';
+    cout<<"]\n";
+
+    cout << "\n[";
+
+    for (int m_rep = 1; m_rep < m + 1; ++m_rep) {
+        sim2_ind(n, p, s, tree_len, m_rep, t);
+
+        cout << ", ";
+        cout.flush();
+    }
+
+    cout<<'\b';
+    cout<<'\b';
+    cout<<"]\n";
+    cout.flush();
+
+}
 
 int main(int argc, char** argv)
 {
@@ -439,10 +619,12 @@ int main(int argc, char** argv)
   bool do_vert = false;
   bool verbose = false;
   bool compare_graphs = false;
+  bool sim_1 = false;
+  bool sim_2 = false;
   int motif = 0;
 
   char c;
-  while ((c = getopt (argc, argv, "g:f:t:b:i:m:qacdvrohl")) != -1)
+  while ((c = getopt (argc, argv, "g:f:t:b:i:m:uwqacdvrohl")) != -1)
   {
     switch (c)
     {
@@ -469,6 +651,12 @@ int main(int argc, char** argv)
         break;
       case 'm':
         motif = atoi(optarg);
+        break;
+      case 'u':
+        sim_1 = true;
+        break;
+      case 'w':
+        sim_2 = true;
         break;
       case 'q':
         compare_graphs = true;
@@ -504,37 +692,48 @@ int main(int argc, char** argv)
         abort();
     }
   } 
+  if(!sim_1 & !sim_2)
+  {
+    if(argc < 3)
+    {
+        printf("%d",sim_1);
+        print_info_short(argv[0]);
+    }
 
-  if(argc < 3)
-    print_info_short(argv[0]);
-
-  if (motif && (motif < 3 || motif > 10))
-  {
-    printf("\nMotif option must be between [3,10]\n");    
-    print_info(argv[0]);
-  }
-  else if (graph_fileA == NULL)
-  { 
-    printf("\nMust supply graph file\n");    
-    print_info(argv[0]);
-  }
-  else if (template_file == NULL && batch_file == NULL && !motif)
-  {
-    printf("\nMust supply template XOR batchfile or -m option\n");
-    print_info(argv[0]);
-  }  
-  else if (template_file != NULL && batch_file != NULL)
-  {
-    printf("\nMust only supply template file XOR batch file\n");
-    print_info(argv[0]);
-  }
-  else if (iterations < 1)
-  {
-    printf("\nNumber of iterations must be positive\n");    
-    print_info(argv[0]);
+    if (motif && (motif < 3 || motif > 10))
+    {
+      printf("\nMotif option must be between [3,10]\n");    
+      print_info(argv[0]);
+    }
+    else if (graph_fileA == NULL)
+    { 
+      printf("\nMust supply graph file\n");    
+      print_info(argv[0]);
+    }
+    else if (template_file == NULL && batch_file == NULL && !motif)
+    {
+      printf("\nMust supply template XOR batchfile or -m option\n");
+      print_info(argv[0]);
+    }  
+    else if (template_file != NULL && batch_file != NULL)
+    {
+      printf("\nMust only supply template file XOR batch file\n");
+      print_info(argv[0]);
+    }
+    else if (iterations < 1)
+    {
+      printf("\nNumber of iterations must be positive\n");    
+      print_info(argv[0]);
+    }
   }
 
-  if(compare_graphs && motif) {
+  if(sim_1) {
+    sim1();
+  }
+  else if(sim_2) {
+    sim2();
+  }
+  else if(compare_graphs && motif) {
     run_compare_graphs(graph_fileA, graph_fileB, motif,
               do_vert, do_gdd, 
               iterations, do_outerloop, calculate_automorphism, 

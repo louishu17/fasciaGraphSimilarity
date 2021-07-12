@@ -1,5 +1,3 @@
-using namespace std;
-
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
@@ -7,6 +5,8 @@ using namespace std;
 #include <string>
 #include <fstream>
 #include <tuple>
+
+using namespace std;
 
 void generate_graph(int n, float p, char filename[50])
 {
@@ -65,7 +65,7 @@ void sim1() {
 
     system("make");
 
-    float p = 0.8;
+    float p = 0.01;
     char tree_file[] = "template.graph";
     int iterations = 100;
 
@@ -172,7 +172,7 @@ void sim2_ind(int n, float p, float s, int tree_len, int m_rep) {
 void sim2() {
 
     int n = 1000;
-    float p = 0.1;
+    float p = 0.001;
     float s = 1;
     int tree_len = 4;
     int m = 20;
