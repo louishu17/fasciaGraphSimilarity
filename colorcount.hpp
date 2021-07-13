@@ -62,7 +62,7 @@ public:
     // philox_k = philox4x32keyinit(philox_uk);
   }
   
-  double do_full_count(Graph* sub_graph, int* labels, int N)
+  double do_full_count(Graph* sub_graph, int* labels, int N, bool random_graphs, float p)
   {  
     num_iter = N;
     t = sub_graph;
@@ -106,7 +106,7 @@ if (verbose) {
       if (verbose) {
          elt = timer();
       }
-      count += template_count();        
+      count += template_count(random_graphs, p);        
       if (verbose) {          
          elt = timer() - elt;      
          printf("Time for count: %9.6lf seconds\n", elt);
@@ -155,13 +155,18 @@ private:
   }
 
 
-  double template_count()
+  double template_count(bool random_graphs, float edge_p)
   {  
     // do random coloring for full graph
     int num_verts = g->num_vertices();
     int num_edges = g->num_edges();
-    float edge_prob = 0.1;
-    // float edge_prob = (float) num_edges / choose(num_verts, 2);
+    float edge_prob;
+    if(random_graphs) {
+      edge_prob = edge_p;
+    }else {
+      edge_prob = (float) num_edges / choose(num_verts, 2);
+    }
+    
     //printf("%d %d %f\n", num_verts, num_edges, edge_prob);
     colors_g = new int[num_verts];    
 

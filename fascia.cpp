@@ -196,7 +196,7 @@ void run_single(char* graph_file, char* template_file, bool labeled,
 #pragma omp parallel reduction(+:full_count)
 {
     int tid = omp_get_thread_num();
-    full_count += graph_count[tid].do_full_count(&t, labels_t, iter);
+    full_count += graph_count[tid].do_full_count(&t, labels_t, iter, false, 0);
     if (do_gdd || do_vert)
       vert_counts[tid] = graph_count[tid].get_vert_counts();
 }   
@@ -219,7 +219,7 @@ void run_single(char* graph_file, char* template_file, bool labeled,
     colorcount graph_count;
     graph_count.init(g, labels_g, labeled, 
                       calc_auto, do_gdd, do_vert, verbose);
-    full_count += graph_count.do_full_count(&t, labels_t, iterations);
+    full_count += graph_count.do_full_count(&t, labels_t, iterations, false, 0);
 
     if (do_gdd || do_vert)
     {
@@ -257,7 +257,7 @@ if (timing || verbose) {
 std::vector<double> run_batch(char* graph_file, char* batch_file, bool labeled,
                 bool do_vert, bool do_gdd,
                 int iterations, 
-                bool do_outerloop, bool calc_auto, bool verbose)
+                bool do_outerloop, bool calc_auto, bool verbose, bool random_graphs, float p)
 {
   Graph g;
   Graph t;
@@ -307,7 +307,7 @@ std::vector<double> run_batch(char* graph_file, char* batch_file, bool labeled,
 #pragma omp parallel reduction(+:full_count)
 {
       int tid = omp_get_thread_num();
-      full_count += graph_count[tid].do_full_count(&t, labels_t, iter);
+      full_count += graph_count[tid].do_full_count(&t, labels_t, iter, random_graphs, p);
       if (do_gdd || do_vert)
         vert_counts[tid] = graph_count[tid].get_vert_counts();
 }   
@@ -334,7 +334,7 @@ std::vector<double> run_batch(char* graph_file, char* batch_file, bool labeled,
       colorcount graph_count;
       graph_count.init(g, labels_g, labeled, 
                         calc_auto, do_gdd, do_vert, verbose);
-      full_count += graph_count.do_full_count(&t, labels_t, iterations);
+      full_count += graph_count.do_full_count(&t, labels_t, iterations, random_graphs, p);
     }
 
     // printf("%e\n", full_count);  
@@ -365,7 +365,7 @@ if (timing || verbose) {
 std::vector<double> run_motif(char* graph_file, int motif, 
                 bool do_vert, bool do_gdd, 
                 int iterations, 
-                bool do_outerloop, bool calc_auto, bool verbose)
+                bool do_outerloop, bool calc_auto, bool verbose, bool random_graphs, float p)
 {
   char* motif_batchfile = NULL;
 
@@ -402,16 +402,16 @@ std::vector<double> run_motif(char* graph_file, int motif,
   return run_batch(graph_file, motif_batchfile, false,
             do_vert, do_gdd,
             iterations, 
-            do_outerloop, calc_auto, verbose);
+            do_outerloop, calc_auto, verbose, random_graphs, p);
 }
 
 void run_compare_graphs(char* graph_fileA, char* graph_fileB, int motif, 
                 bool do_vert, bool do_gdd, 
                 int iterations, 
-                bool do_outerloop, bool calc_auto, bool verbose)
+                bool do_outerloop, bool calc_auto, bool verbose, bool random_graphs, float p)
 {
-  std::vector<double> a = run_motif(graph_fileA, motif, do_vert, do_gdd, iterations, do_outerloop, calc_auto, verbose);
-  std::vector<double> b = run_motif(graph_fileB, motif, do_vert, do_gdd, iterations, do_outerloop, calc_auto, verbose);
+  std::vector<double> a = run_motif(graph_fileA, motif, do_vert, do_gdd, iterations, do_outerloop, calc_auto, verbose, random_graphs, p);
+  std::vector<double> b = run_motif(graph_fileB, motif, do_vert, do_gdd, iterations, do_outerloop, calc_auto, verbose, random_graphs, p);
 
   double stat = std::inner_product(std::begin(a), std::end(a), std::begin(b), 0.0);
   printf("%e", stat);
@@ -532,15 +532,15 @@ void sim2_corr(int n, float p, float s, int tree_len, int m_rep, int iterations)
     char in [50];
     sprintf(in, "%s%d_og.txt", folder, m_rep);
     char graphA [50];
-    sprintf(graphA, "%s%d_%d_corr.txt", folder, m_rep, 1);
+    sprintf(graphA, "%s%d_%dB_%.5f_%.5f_ind.txt", folder, m_rep, tree_len-1, p, s);
     char graphB [50];
-    sprintf(graphB, "%s%d_%d_corr.txt", folder, m_rep, 2);
+    sprintf(graphB, "%s%d_%dB_%.5f_%.5f_ind.txt", folder, m_rep, tree_len-1, p, s);
     
     generate_graph(n, p, in);
     select_edges(s, m_rep, in, graphA);
     select_edges(s, m_rep, in, graphB);
 
-    run_compare_graphs(graphA, graphB, tree_len+1, false, false, iterations, true, true, false);
+    run_compare_graphs(graphA, graphB, tree_len, false, false, iterations, true, true, false, true, p);
         
 }
 
@@ -549,34 +549,28 @@ void sim2_ind(int n, float p, float s, int tree_len, int m_rep, int iterations) 
 
     const char folder [] = "sim2_ind/";
     char graphA [50];
-    sprintf(graphA, "%s%d_%d_ind.txt", folder, m_rep, 1);
+    sprintf(graphA, "%s%d_%dB_%.5f_%.5f_ind.txt", folder, m_rep, tree_len-1, p, s);
     char graphB [50];
-    sprintf(graphB, "%s%d_%d_ind.txt", folder, m_rep, 2);
+    sprintf(graphB, "%s%d_%dB_%.5f_%.5f_ind.txt", folder, m_rep, tree_len-1, p, s);
     
     generate_graph(n, p, graphA);
     generate_graph(n, p, graphB);
 
     //execute compare graphs
-    run_compare_graphs(graphA, graphB, tree_len+1, false, false, iterations, true, true, false);
+    run_compare_graphs(graphA, graphB, tree_len, false, false, iterations, true, true, false, true, p);
 }
 
-void sim2() {
-
-    int n = 100;
-    float p = 0.1;
-    float s = 1;
-    int tree_len = 6;
-    int m = 20;
+void sim2(int n, float p, float s, int K, int m, int iterations) {
 
     // double r = (double) factorial(tree_len+1) / pow(tree_len+1, tree_len+1);
     // int t = floor(1/ pow(r,2));
 
-    int t = 1;
+    int t = iterations;
 
     cout << "\n[";
 
     for (int m_rep = 1; m_rep < m + 1; ++m_rep) {
-        sim2_corr(n, p, s, tree_len, m_rep, t);
+        sim2_corr(n, p, s, K, m_rep, t);
 
         cout << ", ";
         cout.flush();
@@ -589,7 +583,7 @@ void sim2() {
     cout << "\n[";
 
     for (int m_rep = 1; m_rep < m + 1; ++m_rep) {
-        sim2_ind(n, p, s, tree_len, m_rep, t);
+        sim2_ind(n, p, s, K, m_rep, t);
 
         cout << ", ";
         cout.flush();
@@ -623,9 +617,13 @@ int main(int argc, char** argv)
   bool sim_1 = false;
   bool sim_2 = false;
   int motif = 0;
+  int n = 0;
+  float p = 0.0;
+  float s = 0.0;
+  int m = 0;
 
   char c;
-  while ((c = getopt (argc, argv, "g:f:t:b:i:m:uwqacdvrohl")) != -1)
+  while ((c = getopt (argc, argv, "g:f:t:b:m:n:p:s:i:k:uwqacdvrohl")) != -1)
   {
     switch (c)
     {
@@ -647,10 +645,22 @@ int main(int argc, char** argv)
       case 'b':
         batch_file = strdup(optarg);
         break;
+      case 'm':
+        m = atoi(optarg);
+        break;
+      case 'n':
+        n = atoi(optarg);
+        break;
+      case 'p':
+        p = atof(optarg);
+        break;
+      case 's':
+        s = atof(optarg);
+        break;
       case 'i':
         iterations = atoi(optarg);
         break;
-      case 'm':
+      case 'k':
         motif = atoi(optarg);
         break;
       case 'u':
@@ -732,20 +742,27 @@ int main(int argc, char** argv)
     sim1();
   }
   else if(sim_2) {
-    sim2();
+    if(motif && n && p && s && m && iterations) {
+        sim2(n, p, s, motif, m, iterations);
+    }
+    else{
+      printf("\nMissing Arguments\n");
+      printf("%d %f %f %d %d %d", n, p, s, motif, m, iterations);
+    }
+
   }
   else if(compare_graphs && motif) {
     run_compare_graphs(graph_fileA, graph_fileB, motif,
               do_vert, do_gdd, 
               iterations, do_outerloop, calculate_automorphism, 
-              verbose);
+              verbose, false, 0);
   }
   else if (motif)
   {
     run_motif(graph_fileA, motif, 
               do_vert, do_gdd, 
               iterations, do_outerloop, calculate_automorphism, 
-              verbose);
+              verbose, false, 0);
   }
   else if (template_file != NULL)
   {
@@ -759,7 +776,7 @@ int main(int argc, char** argv)
     run_batch(graph_fileA, batch_file, labeled,
                 do_vert, do_gdd,
                 iterations, do_outerloop, calculate_automorphism,
-                verbose);
+                verbose, false, 0);
   }
 
   return 0;
