@@ -1,0 +1,14 @@
+fascia
+.DS_Store
+
+# exclude everything graphs/*
+
+# exception to the rule !graphs/gitkeep.txt
+
+# exclude everything sim2_corr/*
+
+# exception to the rule !sim2_corr/gitkeep.txt
+
+# exclude everything sim2_ind/*
+
+# exception to the rule !sim2_ind/gitkeep.txt
