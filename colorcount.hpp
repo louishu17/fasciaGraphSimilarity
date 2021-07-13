@@ -160,7 +160,7 @@ private:
     // do random coloring for full graph
     int num_verts = g->num_vertices();
     int num_edges = g->num_edges();
-    float edge_prob = 0.001;
+    float edge_prob = 0.1;
     // float edge_prob = (float) num_edges / choose(num_verts, 2);
     //printf("%d %d %f\n", num_verts, num_edges, edge_prob);
     colors_g = new int[num_verts];    

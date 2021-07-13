@@ -298,6 +298,7 @@ std::vector<double> run_batch(char* graph_file, char* batch_file, bool labeled,
         graph_count[i].init(g, labels_g, labeled, 
                             calc_auto, do_gdd, do_vert, verbose);
       }
+
     
       double** vert_counts;
       if (do_gdd || do_vert)
@@ -562,7 +563,7 @@ void sim2_ind(int n, float p, float s, int tree_len, int m_rep, int iterations) 
 void sim2() {
 
     int n = 100;
-    float p = 0.001;
+    float p = 0.1;
     float s = 1;
     int tree_len = 6;
     int m = 20;
@@ -570,7 +571,7 @@ void sim2() {
     // double r = (double) factorial(tree_len+1) / pow(tree_len+1, tree_len+1);
     // int t = floor(1/ pow(r,2));
 
-    int t = 20;
+    int t = 1;
 
     cout << "\n[";
 
