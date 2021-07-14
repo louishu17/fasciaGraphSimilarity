@@ -563,7 +563,7 @@ void sim2(int n, float p, float s, int K, int m, int iterations) {
     }
 
 
-    for(int k = 7; k < 10; ++k) {
+    for(int k = 6; k < 7; ++k) {
       cout << "\n" << k-1;
       cout << "\ncorr";
       cout << "\n[";
