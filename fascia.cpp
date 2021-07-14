@@ -525,39 +525,30 @@ void select_edges(float s, int m_rep, char in [50], char out [50]) {
 
 }
 
-void sim2_corr(int n, float p, float s, int tree_len, int m_rep, int iterations) {
-
-
+void generate_corr_graphs(int n, float p, float s, int m_rep) {
     const char folder [] = "sim2_corr/";
     char in [50];
     sprintf(in, "%s%d_og.txt", folder, m_rep);
-    char graphA [50];
-    sprintf(graphA, "%s%d_%dA_%.5f_%.5f_ind.txt", folder, m_rep, tree_len-1, p, s);
-    char graphB [50];
-    sprintf(graphB, "%s%d_%dB_%.5f_%.5f_ind.txt", folder, m_rep, tree_len-1, p, s);
+    char graphA [100];
+    sprintf(graphA, "%s%d_A_%.5f_%.5f_corr.txt", folder, m_rep, p, s);
+    char graphB [100];
+    sprintf(graphB, "%s%d_B_%.5f_%.5f_corr.txt", folder, m_rep, p, s);
     
     generate_graph(n, p, in);
     select_edges(s, m_rep, in, graphA);
     select_edges(s, m_rep, in, graphB);
-
-    run_compare_graphs(graphA, graphB, tree_len, false, false, iterations, true, true, false, true, p);
-        
 }
 
-
-void sim2_ind(int n, float p, float s, int tree_len, int m_rep, int iterations) {
-
+void generate_ind_graphs(int n, float p, float s, int m_rep) {
     const char folder [] = "sim2_ind/";
-    char graphA [50];
-    sprintf(graphA, "%s%d_%dA_%.5f_%.5f_ind.txt", folder, m_rep, tree_len-1, p, s);
-    char graphB [50];
-    sprintf(graphB, "%s%d_%dB_%.5f_%.5f_ind.txt", folder, m_rep, tree_len-1, p, s);
+    char graphA [100];
+    sprintf(graphA, "%s%d_A_%.5f_%.5f_ind.txt", folder, m_rep, p, s);
+    char graphB [100];
+    sprintf(graphB, "%s%d_B_%.5f_%.5f_ind.txt", folder, m_rep, p, s);
     
     generate_graph(n, p, graphA);
     generate_graph(n, p, graphB);
 
-    //execute compare graphs
-    run_compare_graphs(graphA, graphB, tree_len, false, false, iterations, true, true, false, true, p);
 }
 
 void sim2(int n, float p, float s, int K, int m, int iterations) {
@@ -565,34 +556,55 @@ void sim2(int n, float p, float s, int K, int m, int iterations) {
     // double r = (double) factorial(tree_len+1) / pow(tree_len+1, tree_len+1);
     // int t = floor(1/ pow(r,2));
 
-    int t = iterations;
+    for(int m_rep = 1; m_rep < m+1; ++m_rep) {
+      generate_corr_graphs(n, p, s, m_rep);
+      generate_ind_graphs(n, p, s, m_rep);
 
-    cout << "\n[";
+    }
 
-    for (int m_rep = 1; m_rep < m + 1; ++m_rep) {
-        sim2_corr(n, p, s, K, m_rep, t);
+
+    for(int k = 7; k < 10; ++k) {
+      cout << "\n" << k-1;
+      cout << "\ncorr";
+      cout << "\n[";
+      for (int m_rep = 1; m_rep < m + 1; ++m_rep) {
+        const char folderCorr [] = "sim2_corr/";
+        char graphA [100];
+        sprintf(graphA, "%s%d_A_%.5f_%.5f_corr.txt", folderCorr, m_rep, p, s);
+        char graphB [100];
+        sprintf(graphB, "%s%d_B_%.5f_%.5f_corr.txt", folderCorr, m_rep, p, s);
+
+        run_compare_graphs(graphA, graphB, k, false, false, iterations, false, true, false, true, p);
 
         cout << ", ";
         cout.flush();
+
+      }
+      cout<<'\b';
+      cout<<'\b';
+      cout<<"]\n";
+
+      cout << "\nind";
+      cout << "\n[";
+      for (int m_rep = 1; m_rep < m + 1; ++m_rep) {
+          const char folderInd [] = "sim2_ind/";
+          char graphA [100];
+          sprintf(graphA, "%s%d_A_%.5f_%.5f_ind.txt", folderInd, m_rep, p, s);
+          char graphB [100];
+          sprintf(graphB, "%s%d_B_%.5f_%.5f_ind.txt", folderInd, m_rep, p, s);
+
+          run_compare_graphs(graphA, graphB, k, false, false, iterations, false, true, false, true, p);
+
+          cout << ", ";
+          cout.flush();
+      }
+      cout<<'\b';
+      cout<<'\b';
+      cout<<"]\n";
+      cout.flush();
     }
 
-    cout<<'\b';
-    cout<<'\b';
-    cout<<"]\n";
 
-    cout << "\n[";
-
-    for (int m_rep = 1; m_rep < m + 1; ++m_rep) {
-        sim2_ind(n, p, s, K, m_rep, t);
-
-        cout << ", ";
-        cout.flush();
-    }
-
-    cout<<'\b';
-    cout<<'\b';
-    cout<<"]\n";
-    cout.flush();
 
 }
 
@@ -742,7 +754,7 @@ int main(int argc, char** argv)
     sim1();
   }
   else if(sim_2) {
-    if(motif && n && p && s && m && iterations) {
+    if(n && p && s && m && iterations) {
         sim2(n, p, s, motif, m, iterations);
     }
     else{
