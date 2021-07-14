@@ -532,7 +532,7 @@ void sim2_corr(int n, float p, float s, int tree_len, int m_rep, int iterations)
     char in [50];
     sprintf(in, "%s%d_og.txt", folder, m_rep);
     char graphA [50];
-    sprintf(graphA, "%s%d_%dB_%.5f_%.5f_ind.txt", folder, m_rep, tree_len-1, p, s);
+    sprintf(graphA, "%s%d_%dA_%.5f_%.5f_ind.txt", folder, m_rep, tree_len-1, p, s);
     char graphB [50];
     sprintf(graphB, "%s%d_%dB_%.5f_%.5f_ind.txt", folder, m_rep, tree_len-1, p, s);
     
@@ -549,7 +549,7 @@ void sim2_ind(int n, float p, float s, int tree_len, int m_rep, int iterations) 
 
     const char folder [] = "sim2_ind/";
     char graphA [50];
-    sprintf(graphA, "%s%d_%dB_%.5f_%.5f_ind.txt", folder, m_rep, tree_len-1, p, s);
+    sprintf(graphA, "%s%d_%dA_%.5f_%.5f_ind.txt", folder, m_rep, tree_len-1, p, s);
     char graphB [50];
     sprintf(graphB, "%s%d_%dB_%.5f_%.5f_ind.txt", folder, m_rep, tree_len-1, p, s);
     
