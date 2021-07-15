@@ -563,7 +563,7 @@ void sim2(int n, float p, float s, int K, int m, int iterations) {
     }
 
 
-    for(int k = 6; k < 7; ++k) {
+    for(int k = 7; k < 8; ++k) {
       cout << "\n" << k-1;
       cout << "\ncorr";
       cout << "\n[";
@@ -755,6 +755,7 @@ int main(int argc, char** argv)
   }
   else if(sim_2) {
     if(n && p && s && m && iterations) {
+        printf("%d %f %f %d %d %d", n, p, s, motif, m, iterations);
         sim2(n, p, s, motif, m, iterations);
     }
     else{
