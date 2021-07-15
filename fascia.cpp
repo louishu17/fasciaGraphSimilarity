@@ -23,6 +23,7 @@ using namespace std;
 #include <random>
 #include <string>
 #include <tuple>
+#include <chrono>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -551,20 +552,34 @@ void generate_ind_graphs(int n, float p, float s, int m_rep) {
 
 }
 
-void sim2(int n, float p, float s, int K, int m, int iterations) {
+void sim2(int n, float p, float s, int klow, int khigh, int m, int iterations) {
+    using std::chrono::high_resolution_clock;
+    using std::chrono::duration_cast;
+    using std::chrono::duration;
+    using std::chrono::milliseconds;
+
 
     // double r = (double) factorial(tree_len+1) / pow(tree_len+1, tree_len+1);
     // int t = floor(1/ pow(r,2));
-
+    
+    auto a1 = high_resolution_clock::now();
     for(int m_rep = 1; m_rep < m+1; ++m_rep) {
       generate_corr_graphs(n, p, s, m_rep);
       generate_ind_graphs(n, p, s, m_rep);
-
     }
 
+    auto a2 = high_resolution_clock::now();
 
-    for(int k = 7; k < 8; ++k) {
-      cout << "\n" << k-1;
+    auto ms_int = duration_cast<milliseconds>(a2-a1);
+
+    duration<double, std::milli> ms_double = a2 - a1;
+
+    std::cout << "\nTime to generate graphs: " << ms_double.count() << "ms";
+
+
+    for(int k = klow+1; k < khigh+2; ++k) {
+      auto t1 = high_resolution_clock::now();
+      cout << "\n\n" << k-1;
       cout << "\ncorr";
       cout << "\n[";
       for (int m_rep = 1; m_rep < m + 1; ++m_rep) {
@@ -574,7 +589,7 @@ void sim2(int n, float p, float s, int K, int m, int iterations) {
         char graphB [100];
         sprintf(graphB, "%s%d_B_%.5f_%.5f_corr.txt", folderCorr, m_rep, p, s);
 
-        run_compare_graphs(graphA, graphB, k, false, false, iterations, false, true, false, true, p);
+        run_compare_graphs(graphA, graphB, k, false, false, iterations, true, true, false, true, p);
 
         cout << ", ";
         cout.flush();
@@ -593,7 +608,7 @@ void sim2(int n, float p, float s, int K, int m, int iterations) {
           char graphB [100];
           sprintf(graphB, "%s%d_B_%.5f_%.5f_ind.txt", folderInd, m_rep, p, s);
 
-          run_compare_graphs(graphA, graphB, k, false, false, iterations, false, true, false, true, p);
+          run_compare_graphs(graphA, graphB, k, false, false, iterations, true, true, false, true, p);
 
           cout << ", ";
           cout.flush();
@@ -601,6 +616,14 @@ void sim2(int n, float p, float s, int K, int m, int iterations) {
       cout<<'\b';
       cout<<'\b';
       cout<<"]\n";
+
+      auto t2 = high_resolution_clock::now();
+
+      auto ms_int = duration_cast<milliseconds>(t2-t1);
+
+      duration<double, std::milli> ms_double = t2 - t1;
+
+      std::cout << ms_double.count() << "ms";
       cout.flush();
     }
 
@@ -612,7 +635,6 @@ int main(int argc, char** argv)
 {
   // remove buffer so all outputs show up before crash
   setbuf(stdout, NULL);
-
 
   char* graph_fileA = NULL;
   char* graph_fileB = NULL;
@@ -628,6 +650,7 @@ int main(int argc, char** argv)
   bool compare_graphs = false;
   bool sim_1 = false;
   bool sim_2 = false;
+  int klow = 0;
   int motif = 0;
   int n = 0;
   float p = 0.0;
@@ -635,7 +658,7 @@ int main(int argc, char** argv)
   int m = 0;
 
   char c;
-  while ((c = getopt (argc, argv, "g:f:t:b:m:n:p:s:i:k:uwqacdvrohl")) != -1)
+  while ((c = getopt (argc, argv, "g:f:t:b:m:n:p:s:i:j:k:uwqacdvrohl")) != -1)
   {
     switch (c)
     {
@@ -671,6 +694,9 @@ int main(int argc, char** argv)
         break;
       case 'i':
         iterations = atoi(optarg);
+        break;
+      case 'j':
+        klow = atoi(optarg);
         break;
       case 'k':
         motif = atoi(optarg);
@@ -755,8 +781,8 @@ int main(int argc, char** argv)
   }
   else if(sim_2) {
     if(n && p && s && m && iterations) {
-        printf("%d %f %f %d %d %d", n, p, s, motif, m, iterations);
-        sim2(n, p, s, motif, m, iterations);
+        printf("%d %f %f %d %d %d %d", n, p, s, klow, motif, m, iterations);
+        sim2(n, p, s, klow, motif, m, iterations);
     }
     else{
       printf("\nMissing Arguments\n");
