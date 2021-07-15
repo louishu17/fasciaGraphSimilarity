@@ -607,7 +607,7 @@ void sim2(int n, float p, float s, int klow, int khigh, int m, int iterations) {
         char graphB [100];
         sprintf(graphB, "%s%d_B_%.5f_%.5f_corr.txt", folderCorr, m_rep, p, s);
 
-        run_compare_graphs(graphA, graphB, k, false, false, iterations, true, true, false, true, p);
+        run_compare_graphs(graphA, graphB, k, false, false, iterations, true, true, false, true, p, false);
 
         cout << ", ";
         cout.flush();
@@ -626,7 +626,7 @@ void sim2(int n, float p, float s, int klow, int khigh, int m, int iterations) {
           char graphB [100];
           sprintf(graphB, "%s%d_B_%.5f_%.5f_ind.txt", folderInd, m_rep, p, s);
 
-          run_compare_graphs(graphA, graphB, k, false, false, iterations, true, true, false, true, p);
+          run_compare_graphs(graphA, graphB, k, false, false, iterations, true, true, false, true, p, false);
 
           cout << ", ";
           cout.flush();
