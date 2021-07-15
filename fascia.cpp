@@ -18,6 +18,8 @@ using namespace std;
 #include <unistd.h>
 #include <climits>
 #include <numeric>
+#include <unordered_set>
+#include <algorithm>
 
 #include <stdlib.h>
 #include <random>
@@ -149,7 +151,7 @@ void read_in_graph(Graph& g, char* graph_file, bool labeled,
 void run_single(char* graph_file, char* template_file, bool labeled,
                 bool do_vert, bool do_gdd,
                 int iterations, 
-                bool do_outerloop, bool calc_auto, bool verbose)
+                bool do_outerloop, bool calc_auto, bool verbose, bool compare_graphs)
 {
   Graph g;
   Graph t;
@@ -175,7 +177,7 @@ void run_single(char* graph_file, char* template_file, bool labeled,
   read_in_graph(t, template_file, labeled, srcs_t, dsts_t, labels_t);
 
   double elt = 0.0;
-  if (timing || verbose) {
+  if ((timing || verbose) && !compare_graphs) {
     elt = timer();
   }
   double full_count = 0.0;  
@@ -241,7 +243,7 @@ void run_single(char* graph_file, char* template_file, bool labeled,
 
   printf("%e\n", full_count);
 
-if (timing || verbose) {
+if ((timing || verbose) && !compare_graphs) {
   elt = timer() - elt;
   printf("Total time:\n\t%9.6lf seconds\n", elt);
 }
@@ -258,7 +260,7 @@ if (timing || verbose) {
 std::vector<double> run_batch(char* graph_file, char* batch_file, bool labeled,
                 bool do_vert, bool do_gdd,
                 int iterations, 
-                bool do_outerloop, bool calc_auto, bool verbose, bool random_graphs, float p)
+                bool do_outerloop, bool calc_auto, bool verbose, bool random_graphs, float p, bool compare_graphs)
 {
   Graph g;
   Graph t;
@@ -276,7 +278,7 @@ std::vector<double> run_batch(char* graph_file, char* batch_file, bool labeled,
   read_in_graph(g, graph_file, labeled, srcs_g, dsts_g, labels_g);
 
   double elt = 0.0;
-  if (timing || verbose) {
+  if ((timing || verbose) && !compare_graphs) {
     elt = timer();
   }
 
@@ -350,7 +352,7 @@ std::vector<double> run_batch(char* graph_file, char* batch_file, bool labeled,
     delete [] template_file;
   }
 
-if (timing || verbose) {
+if ((timing || verbose) && !compare_graphs) {
   elt = timer() - elt;
   printf("Total time:\n\t%9.6lf seconds\n", elt);
 }
@@ -366,7 +368,7 @@ if (timing || verbose) {
 std::vector<double> run_motif(char* graph_file, int motif, 
                 bool do_vert, bool do_gdd, 
                 int iterations, 
-                bool do_outerloop, bool calc_auto, bool verbose, bool random_graphs, float p)
+                bool do_outerloop, bool calc_auto, bool verbose, bool random_graphs, float p, bool compare_graphs)
 {
   char* motif_batchfile = NULL;
 
@@ -403,22 +405,38 @@ std::vector<double> run_motif(char* graph_file, int motif,
   return run_batch(graph_file, motif_batchfile, false,
             do_vert, do_gdd,
             iterations, 
-            do_outerloop, calc_auto, verbose, random_graphs, p);
+            do_outerloop, calc_auto, verbose, random_graphs, p, compare_graphs);
 }
 
-void run_compare_graphs(char* graph_fileA, char* graph_fileB, int motif, 
+double run_compare_graphs(char* graph_fileA, char* graph_fileB, int motif, 
                 bool do_vert, bool do_gdd, 
                 int iterations, 
-                bool do_outerloop, bool calc_auto, bool verbose, bool random_graphs, float p)
+                bool do_outerloop, bool calc_auto, bool verbose, bool random_graphs, float p, bool print)
 {
-  std::vector<double> a = run_motif(graph_fileA, motif, do_vert, do_gdd, iterations, do_outerloop, calc_auto, verbose, random_graphs, p);
-  std::vector<double> b = run_motif(graph_fileB, motif, do_vert, do_gdd, iterations, do_outerloop, calc_auto, verbose, random_graphs, p);
+
+  double elt;
+  if (timing && print) {
+    elt = timer();
+  }
+
+  std::vector<double> a = run_motif(graph_fileA, motif, do_vert, do_gdd, iterations, do_outerloop, calc_auto, verbose, random_graphs, p, true);
+  std::vector<double> b = run_motif(graph_fileB, motif, do_vert, do_gdd, iterations, do_outerloop, calc_auto, verbose, random_graphs, p, true);
 
   double stat = std::inner_product(std::begin(a), std::end(a), std::begin(b), 0.0);
-  printf("%e", stat);
+
+  if (timing && print) {
+    elt = timer() - elt;
+    printf("Timing: %f\n", elt);
+  }
+
+  if (print) {
+    printf("%e", stat);
+  }
+
+  return stat;
 }
 
-void generate_graph(int n, float p, char filename[50])
+void generate_graph(int n, float p, char filename[100])
 {
 // generates erdos-renyi graph with n nodes, probability p, saves it to a file with number file_num
 
@@ -472,11 +490,11 @@ void sim1() {
       cout << i << "\n";
       cout << "\n[";
       for(int j = 0; j < m; ++j) {
-        char graph_file [50];
+        char graph_file [100];
         sprintf (graph_file, "graphs/%d.txt", i);
         generate_graph(i, p, graph_file);
         
-        run_single(graph_file, tree_file, false, false, false, iterations, true, true, false);
+        run_single(graph_file, tree_file, false, false, false, iterations, true, true, false, false);
         cout << ", ";
         cout.flush();   
 
@@ -489,7 +507,7 @@ void sim1() {
     }
 }
 
-void select_edges(float s, int m_rep, char in [50], char out [50]) {
+void select_edges(float s, char in [100], char out [100]) {
 
     int n;
     int num_edges;
@@ -528,7 +546,7 @@ void select_edges(float s, int m_rep, char in [50], char out [50]) {
 
 void generate_corr_graphs(int n, float p, float s, int m_rep) {
     const char folder [] = "sim2_corr/";
-    char in [50];
+    char in [100];
     sprintf(in, "%s%d_og.txt", folder, m_rep);
     char graphA [100];
     sprintf(graphA, "%s%d_A_%.5f_%.5f_corr.txt", folder, m_rep, p, s);
@@ -536,8 +554,8 @@ void generate_corr_graphs(int n, float p, float s, int m_rep) {
     sprintf(graphB, "%s%d_B_%.5f_%.5f_corr.txt", folder, m_rep, p, s);
     
     generate_graph(n, p, in);
-    select_edges(s, m_rep, in, graphA);
-    select_edges(s, m_rep, in, graphB);
+    select_edges(s, in, graphA);
+    select_edges(s, in, graphB);
 }
 
 void generate_ind_graphs(int n, float p, float s, int m_rep) {
@@ -631,6 +649,272 @@ void sim2(int n, float p, float s, int klow, int khigh, int m, int iterations) {
 
 }
 
+std::unordered_set<int> pickSet(int N, int k, std::mt19937& gen)
+{
+    std::uniform_int_distribution<> dis(0, N - 1);
+    std::unordered_set<int> elems;
+
+    while (elems.size() < k) {
+        elems.insert(dis(gen));
+    }
+
+    return elems;
+}
+
+std::vector<int> pick(int N, int k) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    std::unordered_set<int> elems = pickSet(N, k, gen);
+
+    // ok, now we have a set of k elements. but now
+    // it's in a [unknown] deterministic order.
+    // so we have to shuffle it:
+
+    std::vector<int> result(elems.begin(), elems.end());
+    std::shuffle(result.begin(), result.end(), gen);
+    return result;
+}
+
+bool search_vector(vector<int> sample, int node) {
+    if(std::find(sample.begin(), sample.end(), node) != sample.end()) {
+        /* v contains x */
+        return true;
+    }
+    else {
+        return false;  
+    /* v does not contain x */
+    }
+}
+
+int find_ele(vector<int> sample, int ele) {
+
+    for (int i = 0; i < sample.size(); ++i) {
+        if (sample.at(i) == ele) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+void sample_nodes(int sample_size, char in [100], char out [100]) {
+
+    int n;
+    int num_edges;
+
+    ifstream og(in);
+    og >> n;
+    og >> num_edges;
+
+    if (n < sample_size){
+        cout << "Sampling failure: size of graph smaller than sampling size.\n";
+        cout.flush();
+        exit(EXIT_FAILURE);
+    }
+
+    vector<int> sample = pick(n, sample_size);
+    sort(sample.begin(), sample.end());
+
+    vector <tuple<int, int>> edges;
+    int edge_1;
+    int edge_2;
+    tuple<int, int> tup;
+
+    int node1;
+    int node2;
+    int count = 0;
+
+    while (og >> edge_1 >> edge_2) {
+        node1 = find_ele(sample, edge_1);
+        node2 = find_ele(sample, edge_2);
+        if ((node1 != -1) & (node2 != -1)) {
+            tup = make_tuple(node1, node2);
+            edges.push_back(tup);
+            ++count;
+            }
+    }
+    og.close();
+
+    ofstream out_file(out);
+
+    out_file << sample_size << '\n';
+    out_file << count;
+
+    for (auto it = edges.begin(); it != edges.end(); ++it) {
+        out_file << '\n' << get<0>(*it) << ' ' << get<1>(*it);
+    }
+    out_file.close();
+
+}
+
+void sample_edges(int sample_edges, char in [100], char out [100]) {
+
+    int n;
+    int num_edges;
+
+    ifstream og(in);
+    og >> n;
+    og >> num_edges;
+
+    if (num_edges < sample_edges){
+        cout << "Sampling failure: edges of graph less than sampling edges.\n";
+        cout.flush();
+        exit(EXIT_FAILURE);
+    }
+
+    vector<int> sample = pick(num_edges, sample_edges);
+
+    vector <tuple<int, int>> edges;
+    int edge_1;
+    int edge_2;
+    tuple<int, int> tup;
+
+    bool edge_check;
+    int ind = 0;
+
+    while (og >> edge_1 >> edge_2) {
+        edge_check = search_vector(sample, ind);
+        if (edge_check) {
+            tup = make_tuple(edge_1, edge_2);
+            edges.push_back(tup);
+            }
+        ++ind;
+    }
+    og.close();
+
+    ofstream out_file(out);
+
+    out_file << n << '\n';
+    out_file << sample_edges;
+
+    for (auto it = edges.begin(); it != edges.end(); ++it) {
+        out_file << '\n' << get<0>(*it) << ' ' << get<1>(*it);
+    }
+    out_file.close();
+
+}
+
+void all_comp(bool do_vert, bool do_gdd, int iterations, bool do_outerloop, bool calc_auto, bool verbose) {
+  
+  int mot_mx = 10;
+  string directory = "small_fb";
+  string file_list = "file_lst.txt";
+
+  vector<string> graphs;
+
+  ifstream file(file_list);
+  string line;
+  while (getline(file, line)) {;
+      graphs.push_back(line);
+  }
+  file.close();
+
+  char nameA [100];
+  char nameB [100];
+  char graph_fileA [100];
+  char graph_fileB [100];
+  string temp_path;
+  double comp_val;
+
+  for (int n = 3; n <= mot_mx; ++n) {
+    for (int j = 0; j < graphs.size(); ++j) {
+      sprintf(nameB, graphs.at(j).c_str());
+      sprintf (graph_fileB, "%s/%s", directory.c_str(), nameB);
+      for (int i = 0; i < j + 1; ++i) {
+        sprintf(nameA, graphs.at(i).c_str());
+        sprintf (graph_fileA, "%s/%s", directory.c_str(), nameA);
+          comp_val = run_compare_graphs(graph_fileA, graph_fileB, n, 
+                  do_vert, do_gdd, 
+                  iterations, do_outerloop, calc_auto, 
+                  verbose, false, 0, false);
+          cout << nameA << "," << nameB << "," << n << "," << comp_val << "\n";
+      }
+    }
+  }
+
+  cout.flush();
+
+}
+
+double samp_comp(char* graph_fileA, char* graph_fileB, int motif, 
+                bool do_vert, bool do_gdd, 
+                int iterations, 
+                bool do_outerloop, bool calc_auto, bool verbose)
+{
+
+  int samp_nodes = 1000;
+  int samp_edges = 1000;
+  int it_nodes = 1;
+  int it_edges = 1;
+  char * directory = "samp_run/";
+
+  char in_1 [100];
+  sprintf(in_1, "%s%s", directory, graph_fileA);
+  char in_2 [100];
+  sprintf(in_2, "%s%s", directory, graph_fileB);
+
+  int n_A;
+  int edges_A;
+  ifstream fileA(in_1);
+  fileA >> n_A;
+  fileA >> edges_A;
+  fileA.close();
+
+  int n_B;
+  int edges_B;
+  ifstream fileB(in_2);
+  fileB >> n_B;
+  fileB >> edges_B;
+  fileB.close();
+
+  if (min(n_A, n_B) < samp_nodes) {
+    cout << "Too small to sample, at least one graph has nodes less than " << samp_nodes << ".\n";
+    samp_nodes = min(n_A, n_B) / 2;
+    cout << "Sampling with nodes " << samp_nodes << " instead.\n";
+    cout.flush();
+  }
+
+  double simi_val;
+  char out_n_1 [100];
+  char out_e_1 [100];
+  char out_n_2 [100];
+  char out_e_2 [100];
+
+  vector<double> simi_scores;
+
+  for (int n_rep = 0; n_rep < it_nodes; ++n_rep) {
+    sprintf(out_n_1, "%sn%d_%s", directory, n_rep, graph_fileA);
+    sprintf(out_n_2, "%sn%d_%s", directory, n_rep, graph_fileB);
+    sample_nodes(samp_nodes, in_1, out_n_1);
+    sample_nodes(samp_nodes, in_2, out_n_2);
+    for (int e_rep = 0; e_rep < it_edges; ++e_rep) {
+      sprintf(out_e_1, "%se%d_n%d_%s", directory, e_rep, n_rep, graph_fileA);
+      sprintf(out_e_2, "%se%d_n%d_%s", directory, e_rep, n_rep, graph_fileB);
+      sample_edges(samp_edges, out_n_1, out_e_1);
+      sample_edges(samp_edges, out_n_2, out_e_2);
+      simi_val = run_compare_graphs(out_e_1, out_e_2, motif, 
+                do_vert, do_gdd, 
+                iterations, do_outerloop, calc_auto, 
+                verbose, false, 0, false);
+      simi_scores.push_back(simi_val);
+    }
+  }
+
+  double avg = 0;
+  for (int i = 0; i <  simi_scores.size(); ++i) {
+    //cout << simi_scores.at(i) << " ";
+    //cout.flush();
+    avg += simi_scores.at(i);
+  }
+
+  avg = avg / simi_scores.size();
+  cout << avg << "\n";
+  cout.flush();
+  return avg;
+
+}
+
 int main(int argc, char** argv)
 {
   // remove buffer so all outputs show up before crash
@@ -651,6 +935,8 @@ int main(int argc, char** argv)
   bool sim_1 = false;
   bool sim_2 = false;
   int klow = 0;
+  bool many_comp = false;
+  bool small_sample = false;
   int motif = 0;
   int n = 0;
   float p = 0.0;
@@ -658,7 +944,7 @@ int main(int argc, char** argv)
   int m = 0;
 
   char c;
-  while ((c = getopt (argc, argv, "g:f:t:b:m:n:p:s:i:j:k:uwqacdvrohl")) != -1)
+  while ((c = getopt (argc, argv, "g:f:t:b:m:n:p:s:i:k:uwqacdvrohlxy")) != -1)
   {
     switch (c)
     {
@@ -710,6 +996,12 @@ int main(int argc, char** argv)
       case 'q':
         compare_graphs = true;
         break;
+      case 'x':
+        many_comp = true;
+        break;
+      case 'y':
+        small_sample = true;
+        break;
       case 'a':
         calculate_automorphism = false; 
         break;
@@ -741,7 +1033,7 @@ int main(int argc, char** argv)
         abort();
     }
   } 
-  if(!sim_1 & !sim_2)
+  if(!sim_1 & !sim_2 & !many_comp & !small_sample)
   {
     if(argc < 3)
     {
@@ -794,28 +1086,34 @@ int main(int argc, char** argv)
     run_compare_graphs(graph_fileA, graph_fileB, motif,
               do_vert, do_gdd, 
               iterations, do_outerloop, calculate_automorphism, 
-              verbose, false, 0);
+              verbose, false, 0, true);
+  }
+  else if(many_comp) {
+    all_comp(do_vert, do_gdd, iterations, do_outerloop, calculate_automorphism, verbose);
+  }
+  else if (small_sample) {
+    samp_comp(graph_fileA, graph_fileB, motif, do_vert, do_gdd, iterations, do_outerloop, calculate_automorphism, verbose);
   }
   else if (motif)
   {
     run_motif(graph_fileA, motif, 
               do_vert, do_gdd, 
               iterations, do_outerloop, calculate_automorphism, 
-              verbose, false, 0);
+              verbose, false, 0, false);
   }
   else if (template_file != NULL)
   {
     run_single(graph_fileA, template_file, labeled,                
                 do_vert, do_gdd,
                 iterations, do_outerloop, calculate_automorphism,
-                verbose);
+                verbose, compare_graphs);
   }
   else if (batch_file != NULL)
   {
     run_batch(graph_fileA, batch_file, labeled,
                 do_vert, do_gdd,
                 iterations, do_outerloop, calculate_automorphism,
-                verbose, false, 0);
+                verbose, false, 0, compare_graphs);
   }
 
   return 0;

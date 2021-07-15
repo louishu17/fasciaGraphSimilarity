@@ -18,3 +18,21 @@ sim2_ind/*
 
 # exception to the rule
 !sim2_ind/gitkeep.txt
+
+# exclude everything
+facebook/*
+
+# exception to the rule
+!facebook/gitkeep.txt
+
+# exclude everything
+small_fb/*
+
+# exception to the rule
+!small_fb/gitkeep.txt
+
+# exclude everything
+samp_run/*
+
+# exception to the rule
+!samp_run/gitkeep.txt
