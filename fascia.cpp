@@ -838,15 +838,9 @@ void all_comp(bool do_vert, bool do_gdd, int iterations, bool do_outerloop, bool
 }
 
 double samp_comp(char* graph_fileA, char* graph_fileB, int motif, 
-                bool do_vert, bool do_gdd, 
-                int iterations, 
-                bool do_outerloop, bool calc_auto, bool verbose)
+                bool do_outerloop, int iterations, int it_edges, int samp_nodes, int samp_edges)
 {
 
-  int samp_nodes = 1000;
-  int samp_edges = 1000;
-  int it_nodes = 1;
-  int it_edges = 1;
   char * directory = "samp_run/";
 
   char in_1 [100];
@@ -883,7 +877,7 @@ double samp_comp(char* graph_fileA, char* graph_fileB, int motif,
 
   vector<double> simi_scores;
 
-  for (int n_rep = 0; n_rep < it_nodes; ++n_rep) {
+  for (int n_rep = 0; n_rep < iterations; ++n_rep) {
     sprintf(out_n_1, "%sn%d_%s", directory, n_rep, graph_fileA);
     sprintf(out_n_2, "%sn%d_%s", directory, n_rep, graph_fileB);
     sample_nodes(samp_nodes, in_1, out_n_1);
@@ -894,9 +888,9 @@ double samp_comp(char* graph_fileA, char* graph_fileB, int motif,
       sample_edges(samp_edges, out_n_1, out_e_1);
       sample_edges(samp_edges, out_n_2, out_e_2);
       simi_val = run_compare_graphs(out_e_1, out_e_2, motif, 
-                do_vert, do_gdd, 
-                iterations, do_outerloop, calc_auto, 
-                verbose, false, 0, false);
+                false, false, 
+                iterations, do_outerloop, true, 
+                false, false, 0, false);
       simi_scores.push_back(simi_val);
     }
   }
@@ -914,6 +908,48 @@ double samp_comp(char* graph_fileA, char* graph_fileB, int motif,
   return avg;
 
 }
+
+void all_trees(char* graph_file, char* out, int iterations, 
+        bool do_outerloop) {
+  
+  ofstream file(out);
+
+  for (int i = 3; i <= 10; ++i) {
+    vector<double> tree_counts = run_motif(graph_file, i, false, false, iterations, do_outerloop, true, false, false, 0.0, false);
+    for (int j = 0; j < tree_counts.size(); ++j) {
+      file << tree_counts.at(j);
+      if (j != tree_counts.size() - 1) {
+        file << ',';
+      } 
+    }
+    file << '\n';
+  }
+
+  file.close();
+  
+}
+
+void trees_for_graphs(int iterations, 
+        bool do_outerloop) {
+
+  string directory_in = "small_fb";
+  string directory_out = "count_trees";
+  string file_list = "file_lst.txt";
+
+  ifstream file(file_list);
+
+  string line;
+  char in [100];
+  char out [100];
+
+  while (getline(file, line)) {;
+    sprintf (in, "%s/%s", directory_in.c_str(), line.c_str());
+    sprintf (out, "%s/counts_%s", directory_out.c_str(), line.c_str());
+    all_trees(in, out, iterations, do_outerloop);
+  }
+  file.close();
+
+  }
 
 int main(int argc, char** argv)
 {
@@ -937,6 +973,10 @@ int main(int argc, char** argv)
   int klow = 0;
   bool many_comp = false;
   bool small_sample = false;
+  bool count_trees = false;
+  int it_edges = 1;
+  int samp_nodes = 1000;
+  int samp_edges = 1000;
   int motif = 0;
   int n = 0;
   float p = 0.0;
@@ -944,7 +984,7 @@ int main(int argc, char** argv)
   int m = 0;
 
   char c;
-  while ((c = getopt (argc, argv, "g:f:t:b:m:n:p:s:i:k:uwqacdvrohlxy")) != -1)
+  while ((c = getopt (argc, argv, "g:f:t:b:m:n:p:s:i:k:A:B:C:uwqacdvrohlxyz")) != -1)
   {
     switch (c)
     {
@@ -987,6 +1027,15 @@ int main(int argc, char** argv)
       case 'k':
         motif = atoi(optarg);
         break;
+      case 'A':
+        it_edges = atoi(optarg);
+        break;
+      case 'B':
+        samp_nodes = atoi(optarg);
+        break;
+      case 'C':
+        samp_edges = atoi(optarg);
+        break;
       case 'u':
         sim_1 = true;
         break;
@@ -1001,6 +1050,9 @@ int main(int argc, char** argv)
         break;
       case 'y':
         small_sample = true;
+        break;
+      case 'z':
+        count_trees = true;
         break;
       case 'a':
         calculate_automorphism = false; 
@@ -1033,7 +1085,7 @@ int main(int argc, char** argv)
         abort();
     }
   } 
-  if(!sim_1 & !sim_2 & !many_comp & !small_sample)
+  if(!sim_1 & !sim_2 & !many_comp & !small_sample &!count_trees)
   {
     if(argc < 3)
     {
@@ -1092,7 +1144,10 @@ int main(int argc, char** argv)
     all_comp(do_vert, do_gdd, iterations, do_outerloop, calculate_automorphism, verbose);
   }
   else if (small_sample) {
-    samp_comp(graph_fileA, graph_fileB, motif, do_vert, do_gdd, iterations, do_outerloop, calculate_automorphism, verbose);
+    samp_comp(graph_fileA, graph_fileB, motif, do_outerloop, iterations, it_edges, samp_nodes, samp_edges);
+  }
+  else if (count_trees) {
+    trees_for_graphs(iterations, do_outerloop);
   }
   else if (motif)
   {

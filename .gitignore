@@ -36,3 +36,9 @@ samp_run/*
 
 # exception to the rule
 !samp_run/gitkeep.txt
+
+# exclude everything
+count_trees/*
+
+# exception to the rule
+!count_trees/gitkeep.txt
