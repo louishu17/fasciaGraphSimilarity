@@ -151,7 +151,7 @@ void read_in_graph(Graph& g, char* graph_file, bool labeled,
 void run_single(char* graph_file, char* template_file, bool labeled,
                 bool do_vert, bool do_gdd,
                 int iterations, 
-                bool do_outerloop, bool calc_auto, bool verbose, bool compare_graphs)
+                bool do_outerloop, bool calc_auto, bool verbose, bool main)
 {
   Graph g;
   Graph t;
@@ -177,7 +177,7 @@ void run_single(char* graph_file, char* template_file, bool labeled,
   read_in_graph(t, template_file, labeled, srcs_t, dsts_t, labels_t);
 
   double elt = 0.0;
-  if ((timing || verbose) && !compare_graphs) {
+  if ((timing || verbose) && main) {
     elt = timer();
   }
   double full_count = 0.0;  
@@ -243,7 +243,7 @@ void run_single(char* graph_file, char* template_file, bool labeled,
 
   printf("%e\n", full_count);
 
-if ((timing || verbose) && !compare_graphs) {
+if ((timing || verbose) && main) {
   elt = timer() - elt;
   printf("Total time:\n\t%9.6lf seconds\n", elt);
 }
@@ -278,7 +278,7 @@ std::vector<double> run_batch(char* graph_file, char* batch_file, bool labeled,
   read_in_graph(g, graph_file, labeled, srcs_g, dsts_g, labels_g);
 
   double elt = 0.0;
-  if ((timing || verbose) && !compare_graphs) {
+  if ((timing || verbose) && main) {
     elt = timer();
   }
 
@@ -352,7 +352,7 @@ std::vector<double> run_batch(char* graph_file, char* batch_file, bool labeled,
     delete [] template_file;
   }
 
-if ((timing || verbose) && !compare_graphs) {
+if ((timing || verbose) && main) {
   elt = timer() - elt;
   printf("Total time:\n\t%9.6lf seconds\n", elt);
 }
@@ -368,7 +368,7 @@ if ((timing || verbose) && !compare_graphs) {
 std::vector<double> run_motif(char* graph_file, int motif, 
                 bool do_vert, bool do_gdd, 
                 int iterations, 
-                bool do_outerloop, bool calc_auto, bool verbose, bool random_graphs, float p, bool compare_graphs)
+                bool do_outerloop, bool calc_auto, bool verbose, bool random_graphs, float p, bool main)
 {
   char* motif_batchfile = NULL;
 
@@ -405,17 +405,17 @@ std::vector<double> run_motif(char* graph_file, int motif,
   return run_batch(graph_file, motif_batchfile, false,
             do_vert, do_gdd,
             iterations, 
-            do_outerloop, calc_auto, verbose, random_graphs, p, compare_graphs);
+            do_outerloop, calc_auto, verbose, random_graphs, p, main);
 }
 
 double run_compare_graphs(char* graph_fileA, char* graph_fileB, int motif, 
                 bool do_vert, bool do_gdd, 
                 int iterations, 
-                bool do_outerloop, bool calc_auto, bool verbose, bool random_graphs, float p, bool print)
+                bool do_outerloop, bool calc_auto, bool verbose, bool random_graphs, float p, bool main)
 {
 
   double elt;
-  if (timing && print) {
+  if (timing && main) {
     elt = timer();
   }
 
@@ -424,12 +424,12 @@ double run_compare_graphs(char* graph_fileA, char* graph_fileB, int motif,
 
   double stat = std::inner_product(std::begin(a), std::end(a), std::begin(b), 0.0);
 
-  if (timing && print) {
+  if (timing && main) {
     elt = timer() - elt;
     printf("Timing: %f\n", elt);
   }
 
-  if (print) {
+  if (main) {
     printf("%e", stat);
   }
 
@@ -795,11 +795,10 @@ void sample_edges(int sample_edges, char in [100], char out [100]) {
 
 }
 
-void all_comp(bool do_vert, bool do_gdd, int iterations, bool do_outerloop, bool calc_auto, bool verbose) {
+void all_comp(string file_list, bool do_vert, bool do_gdd, int iterations, bool do_outerloop, bool calc_auto, bool verbose) {
   
   int mot_mx = 10;
   string directory = "small_fb";
-  string file_list = "file_lst.txt";
 
   vector<string> graphs;
 
@@ -911,11 +910,21 @@ double samp_comp(char* graph_fileA, char* graph_fileB, int motif,
 
 void all_trees(char* graph_file, char* out, int iterations, 
         bool do_outerloop) {
-  
+
+  double elt;
+
   ofstream file(out);
+  file << graph_file << '\n';
 
   for (int i = 3; i <= 10; ++i) {
-    vector<double> tree_counts = run_motif(graph_file, i, false, false, iterations, do_outerloop, true, false, false, 0.0, false);
+    if (timing) {
+    elt = timer();
+    }
+    vector<double> tree_counts = run_motif(graph_file, i, false, false, iterations, do_outerloop, true, false, false, 0, false);
+    if (timing) {
+      cout << "time, " << graph_file << ", " << i << ", " << timer() - elt << "\n";
+      cout.flush();
+    }
     for (int j = 0; j < tree_counts.size(); ++j) {
       file << tree_counts.at(j);
       if (j != tree_counts.size() - 1) {
@@ -923,18 +932,21 @@ void all_trees(char* graph_file, char* out, int iterations,
       } 
     }
     file << '\n';
+    file.flush();
   }
 
   file.close();
   
 }
 
-void trees_for_graphs(int iterations, 
+void trees_for_graphs(string file_list, int iterations, 
         bool do_outerloop) {
 
   string directory_in = "small_fb";
-  string directory_out = "count_trees";
-  string file_list = "file_lst.txt";
+  string directory_out = "count_trees_no";
+  if (do_outerloop) {
+    directory_out = "count_trees_o";
+  }
 
   ifstream file(file_list);
 
@@ -1141,34 +1153,34 @@ int main(int argc, char** argv)
               verbose, false, 0, true);
   }
   else if(many_comp) {
-    all_comp(do_vert, do_gdd, iterations, do_outerloop, calculate_automorphism, verbose);
+    all_comp(graph_fileA, do_vert, do_gdd, iterations, do_outerloop, calculate_automorphism, verbose);
   }
   else if (small_sample) {
     samp_comp(graph_fileA, graph_fileB, motif, do_outerloop, iterations, it_edges, samp_nodes, samp_edges);
   }
   else if (count_trees) {
-    trees_for_graphs(iterations, do_outerloop);
+    trees_for_graphs(graph_fileA, iterations, do_outerloop);
   }
   else if (motif)
   {
     run_motif(graph_fileA, motif, 
               do_vert, do_gdd, 
               iterations, do_outerloop, calculate_automorphism, 
-              verbose, false, 0, false);
+              verbose, false, 0, true);
   }
   else if (template_file != NULL)
   {
     run_single(graph_fileA, template_file, labeled,                
                 do_vert, do_gdd,
                 iterations, do_outerloop, calculate_automorphism,
-                verbose, compare_graphs);
+                verbose, true);
   }
   else if (batch_file != NULL)
   {
     run_batch(graph_fileA, batch_file, labeled,
                 do_vert, do_gdd,
                 iterations, do_outerloop, calculate_automorphism,
-                verbose, false, 0, compare_graphs);
+                verbose, false, 0, true);
   }
 
   return 0;

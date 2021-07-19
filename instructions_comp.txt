@@ -1,9 +1,9 @@
 To run all_comp:
 code:
-./fascia -x
+./fascia -x -g (file_lst.txt)
 IMPORTANT
 — small_fb is a folder. It is git ignored except for the folder itself. Put files into it to run all_comp and compare all possible pairs with all possible tree sizes.
-— file_list.txt is a list of files with the names of small_fb files. You need to manually change it. If you use python to find all the file names, beware that small_fb has a gitkeep.txt file
+— file_list.txt is a list of files with the names of small_fb files. You need to manually change it. If you use python to find all the file names, beware that small_fb has a gitkeep.txt and possibly a .DS_Store
 (c++ implementation of searching file directory is complicated)
 
 To run samp_comp:
@@ -12,3 +12,10 @@ code:
 IMPORTANT
 — you must put the graphs you want to compare in the samp_run folder
 — you must use the name of the graphs in the command line - not the path! So if it’s in the samp_run folder as Swarthmore42.txt, you directly put in Swarthmore42.txt to the command line argument, not samp_run/Swarthmore42.txt, etc.
+
+To run trees_for_graphs:
+code:
+./fascia -z -g file_lst.txt
+IMPORTANT
+— you must put the graphs you want to compare in the samp_run folder
+— file_list.txt is a list of files with the names of small_fb files. You need to manually change it. If you use python to find all the file names, beware that small_fb has a gitkeep.txt and possibly a .DS_Store
