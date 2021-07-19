@@ -62,7 +62,7 @@ public:
     // philox_k = philox4x32keyinit(philox_uk);
   }
   
-  double do_full_count(Graph* sub_graph, int* labels, int N, bool random_graphs, float p)
+  double do_full_count(Graph* sub_graph, int* labels, int N, bool random_graphs, float p, bool isCentered)
   {  
     num_iter = N;
     t = sub_graph;
@@ -106,7 +106,7 @@ if (verbose) {
       if (verbose) {
          elt = timer();
       }
-      count += template_count(random_graphs, p);        
+      count += template_count(random_graphs, p, isCentered);        
       if (verbose) {          
          elt = timer() - elt;      
          printf("Time for count: %9.6lf seconds\n", elt);
@@ -155,7 +155,7 @@ private:
   }
 
 
-  double template_count(bool random_graphs, float edge_p)
+  double template_count(bool random_graphs, float edge_p, bool isCentered)
   {  
     // do random coloring for full graph
     int num_verts = g->num_vertices();
@@ -229,7 +229,7 @@ if (verbose) {
 if (verbose) {  
         elt = timer();
 }
-        colorful_count(s, edge_prob);
+        colorful_count(s, edge_prob, isCentered);
 if (verbose) {  
         elt = timer() - elt;
         fprintf(stderr, "s %d, array time %9.6lf s.\n", s, elt);
@@ -272,7 +272,7 @@ if (verbose) {
 if (verbose) {  
       elt = timer();
 }
-      full_count = colorful_count(0, edge_prob);
+      full_count = colorful_count(0, edge_prob, isCentered);
 if (verbose) {  
       elt = timer() - elt;
       fprintf(stderr, "s %d, array time %9.6lf s.\n", 0, elt);
@@ -337,7 +337,7 @@ if (verbose) {
     set_count = set_count_loop;
   }
   
-  float colorful_count(int s, float edge_prob)
+  float colorful_count(int s, float edge_prob, bool centered)
   {
     float cc = 0.0;
     int num_verts_sub = subtemplates[s].num_vertices();
@@ -356,18 +356,26 @@ if (verbose) {
         double elt = timer();
 #endif
 
-    // int *valid_nbrs = (int *) malloc(max_degree * sizeof(int));
     int *index_nbrs = (int *) malloc(num_verts_graph * sizeof(int));
-    // assert(valid_nbrs != NULL);
     assert(index_nbrs != NULL);
-    // int valid_nbrs_count = 0;
+
+    for(int i = 0; i < num_verts_graph; ++i){
+      index_nbrs[i] = 0;
+    }
+      
+
+    int *valid_nbrs = (int *) malloc(max_degree * sizeof(int));
+    assert(valid_nbrs != NULL);
+    
+    int valid_nbrs_count = 0;
+    
 
     
 #pragma omp for schedule(static) reduction(+:cc) reduction(+:set_count_loop) \
         reduction(+:total_count_loop) reduction(+:read_count_loop)
     for (int v = 0; v < num_verts_graph; ++v)
     {
-      // valid_nbrs_count = 0;
+      valid_nbrs_count = 0;
       
       if (dt.is_vertex_init_active(v))
       {
@@ -377,77 +385,119 @@ if (verbose) {
 #if COLLECT_DATA
         ++read_count_loop;
 #endif 
-        for(int i = 0; i < num_verts_graph; ++i){
-          index_nbrs[i] = 0;
-        }
         for (int i = 0; i < end; ++i) {
           int adj_i = adjs[i];
           if (dt.is_vertex_init_passive(adj_i)) {
-            // valid_nbrs[valid_nbrs_count++] = adj_i;
+            valid_nbrs[valid_nbrs_count++] = adj_i;
             index_nbrs[adj_i] = 1;
           }
         }
         
-
-        int num_combinations_verts_sub = 
-                              choose_table[num_colors][num_verts_sub];
-        for (int n = 0; n < num_combinations_verts_sub; ++n)
-        {
-          float color_count = 0.0;                
-          int* comb_indexes_a = comb_num_indexes[0][s][n];
-          int* comb_indexes_p = comb_num_indexes[1][s][n];
-
-          int p = num_combinations - 1;
-          for (int a = 0; a < num_combinations; ++a, --p) 
+        if(centered){      
+          int num_combinations_verts_sub = 
+                                choose_table[num_colors][num_verts_sub];
+          for (int n = 0; n < num_combinations_verts_sub; ++n)
           {
-            float count_a = counts_a[comb_indexes_a[a]];
-            if (count_a) 
+            float color_count = 0.0;                
+            int* comb_indexes_a = comb_num_indexes[0][s][n];
+            int* comb_indexes_p = comb_num_indexes[1][s][n];
+
+            int p = num_combinations - 1;
+            for (int a = 0; a < num_combinations; ++a, --p) 
             {
-              // for (int i = 0; i < valid_nbrs_count; ++i) 
-              // {
-//                 color_count += count_a * (1.0 -edge_prob) *
-//                     dt.get_passive(valid_nbrs[i], comb_indexes_p[p]);
-// #if COLLECT_DATA                  
-//                 ++read_count_loop;
-// #endif                  
-//               }
-
-              for(int i = 0; i < num_verts_graph; ++i)
+              float count_a = counts_a[comb_indexes_a[a]];
+              if (count_a) 
               {
+                // for (int i = 0; i < valid_nbrs_count; ++i) 
+                // {
+  //                 color_count += count_a * (1.0 -edge_prob) *
+  //                     dt.get_passive(valid_nbrs[i], comb_indexes_p[p]);
+  // #if COLLECT_DATA                  
+  //                 ++read_count_loop;
+  // #endif                  
+  //               }
 
-                //outside node
-                if(i != v) {
-                  if(index_nbrs[i] == 0){
-                    color_count += count_a * (0.0 - edge_prob) * dt.get_passive(i, comb_indexes_p[p]);
+                for(int i = 0; i < num_verts_graph; ++i)
+                {
+
+                  //outside node
+                  if(i != v) {
+                    if(index_nbrs[i] == 0){
+                      color_count += count_a * (0.0 - edge_prob) * dt.get_passive(i, comb_indexes_p[p]);
+                    }
+                    else{
+                      color_count += count_a * (1.0 - edge_prob) * dt.get_passive(i, comb_indexes_p[p]);
+                    }
                   }
-                  else{
-                    color_count += count_a * (1.0 - edge_prob) * dt.get_passive(i, comb_indexes_p[p]);
-                  }
+  
+  #if COLLECT_DATA                  
+                  ++read_count_loop;
+  #endif                  
                 }
- 
-#if COLLECT_DATA                  
-                ++read_count_loop;
-#endif                  
               }
             }
+            
+
+            cc += color_count;
+  #if COLLECT_DATA
+            ++set_count_loop;
+  #endif              
+            if (s != 0)
+              dt.set(v, comb_num_indexes_set[s][n], color_count);
+            else if (do_graphlet_freq || do_vert_output)
+              final_vert_counts[v] += (double)color_count;
+
+  #if COLLECT_DATA            
+            ++total_count_loop;
+  #endif
           }
-          
+        } else {
+            if (valid_nbrs_count)
+              {
+                int num_combinations_verts_sub = 
+                                      choose_table[num_colors][num_verts_sub];
+                for (int n = 0; n < num_combinations_verts_sub; ++n)
+                {
+                  float color_count = 0.0;                
+                  int* comb_indexes_a = comb_num_indexes[0][s][n];
+                  int* comb_indexes_p = comb_num_indexes[1][s][n];
 
-          cc += color_count;
-#if COLLECT_DATA
-          ++set_count_loop;
-#endif              
-          if (s != 0)
-            dt.set(v, comb_num_indexes_set[s][n], color_count);
-          else if (do_graphlet_freq || do_vert_output)
-            final_vert_counts[v] += (double)color_count;
-
-#if COLLECT_DATA            
-          ++total_count_loop;
-#endif
+                  int p = num_combinations - 1;
+                  for (int a = 0; a < num_combinations; ++a, --p) 
+                  {
+                    int count_a = counts_a[comb_indexes_a[a]];
+                    if (count_a) 
+                    {
+                      for (int i = 0; i < valid_nbrs_count; ++i) 
+                      {
+                        color_count += count_a * 
+                            dt.get_passive(valid_nbrs[i], comb_indexes_p[p]);
+  #if COLLECT_DATA                  
+                        ++read_count_loop;
+  #endif                  
+                      }
+                    }
+                  }
+                  
+                  if (color_count > 0.0)
+                  {
+                    cc += color_count;
+  #if COLLECT_DATA
+                    ++set_count_loop;
+                    
+  #endif              
+                    if (s != 0)
+                      dt.set(v, comb_num_indexes_set[s][n], color_count);
+                    else if (do_graphlet_freq || do_vert_output)
+                      final_vert_counts[v] += (double)color_count;
+                  }
+  #if COLLECT_DATA            
+                  ++total_count_loop;
+  #endif
+                }
+              }
+            }
         }
-        
-      }
     }
 #if TIME_INNERLOOP
 #ifdef _OPENMP
@@ -459,7 +509,7 @@ if (verbose) {
     fprintf(stderr, "tid %d, time %9.6lf s.\n", tid, elt);
 #endif
 
-    // free(valid_nbrs);    
+    free(valid_nbrs);    
     free(index_nbrs);
 } // end parallel
 
