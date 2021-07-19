@@ -260,7 +260,7 @@ if ((timing || verbose) && main) {
 std::vector<double> run_batch(char* graph_file, char* batch_file, bool labeled,
                 bool do_vert, bool do_gdd,
                 int iterations, 
-                bool do_outerloop, bool calc_auto, bool verbose, bool random_graphs, float p, bool compare_graphs)
+                bool do_outerloop, bool calc_auto, bool verbose, bool random_graphs, float p, bool main)
 {
   Graph g;
   Graph t;
@@ -419,8 +419,8 @@ double run_compare_graphs(char* graph_fileA, char* graph_fileB, int motif,
     elt = timer();
   }
 
-  std::vector<double> a = run_motif(graph_fileA, motif, do_vert, do_gdd, iterations, do_outerloop, calc_auto, verbose, random_graphs, p, true);
-  std::vector<double> b = run_motif(graph_fileB, motif, do_vert, do_gdd, iterations, do_outerloop, calc_auto, verbose, random_graphs, p, true);
+  std::vector<double> a = run_motif(graph_fileA, motif, do_vert, do_gdd, iterations, do_outerloop, calc_auto, verbose, false, 0, false);
+  std::vector<double> b = run_motif(graph_fileB, motif, do_vert, do_gdd, iterations, do_outerloop, calc_auto, verbose, false, 0, false);
 
   double stat = std::inner_product(std::begin(a), std::end(a), std::begin(b), 0.0);
 
