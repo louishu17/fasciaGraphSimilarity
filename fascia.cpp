@@ -148,7 +148,7 @@ void read_in_graph(Graph& g, char* graph_file, bool labeled,
   //print_my_graph(g);
 }
 
-void run_single(char* graph_file, char* template_file, bool labeled,
+double run_single(char* graph_file, char* template_file, bool labeled,
                 bool do_vert, bool do_gdd,
                 int iterations, 
                 bool do_outerloop, bool calc_auto, bool verbose, bool random_graphs, float p, bool main, bool isCentered)
@@ -241,12 +241,12 @@ void run_single(char* graph_file, char* template_file, bool labeled,
     }
   }
 
-  printf("%e\n", full_count);
+  printf("%e", full_count);
 
-if ((timing || verbose) && main) {
-  elt = timer() - elt;
-  printf("Total time:\n\t%9.6lf seconds\n", elt);
-}
+  if ((timing || verbose) && main) {
+    elt = timer() - elt;
+    printf("Total time:\n\t%9.6lf seconds\n", elt);
+  }
 
   delete [] srcs_g;
   delete [] dsts_g;
@@ -254,6 +254,9 @@ if ((timing || verbose) && main) {
   delete [] srcs_t;
   delete [] dsts_t;
   delete [] labels_t;
+  
+  return full_count;
+
 }
 
 
@@ -475,31 +478,46 @@ void sim1(int m, int iterations, float p, bool random_graphs, bool isCentered) {
 
     std::vector<int> m_sizes;
 
-    m_sizes.push_back(100);
-    m_sizes.push_back(500);
-    m_sizes.push_back(1000);
-    m_sizes.push_back(10000);
+    for (int i = 1; i <= 20; ++i) {
+      m_sizes.push_back(i * 50);
+    }
 
-  
+    //m_sizes.push_back(100);
+    //m_sizes.push_back(500);
+    //m_sizes.push_back(1000);
+    //m_sizes.push_back(10000);  
+
+    std::vector<double> fin_counts;
+    double val;
 
     for (const int& i : m_sizes) {
       cout << i << "\n";
-      cout << "\n[";
+      cout << "[";
+      val = 0;
       for(int j = 0; j < m; ++j) {
         char graph_file [100];
         sprintf (graph_file, "graphs/%d.txt", i);
         generate_graph(i, p, graph_file);
-        run_single(graph_file, tree_file, false, false, false, iterations, true, true, false, random_graphs, p, false, isCentered);
+        val = val + run_single(graph_file, tree_file, false, false, false, iterations, true, true, false, random_graphs, p, false, isCentered);
         cout << ", ";
         cout.flush();   
 
 
       }
+      val = val / m;
+      fin_counts.push_back(val);
       cout<<'\b';
       cout<<'\b';
       cout<<"]\n";
       cout.flush();      
     }
+
+    cout << '[';
+    for (const double& d : fin_counts) {
+      cout << d << ',';
+    }
+    cout << "]\n";
+    cout.flush();
 }
 
 void select_edges(float s, char in [100], char out [100]) {
