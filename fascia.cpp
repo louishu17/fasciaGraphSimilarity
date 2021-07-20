@@ -980,18 +980,23 @@ void all_trees(char* graph_file, char* out, int iterations,
     if (timing) {
     elt = timer();
     }
-    vector<double> tree_counts = run_motif(graph_file, i, false, false, iterations, do_outerloop, true, false, false, 0, false, isCentered);
+    for (int rep = 0; rep < iterations; ++rep) {
+      vector<double> tree_counts = run_motif(graph_file, i, false, false, 1, do_outerloop, true, false, false, 0, false, isCentered);
+      for (int j = 0; j < tree_counts.size(); ++j) {
+        file << tree_counts.at(j);
+        if (j != tree_counts.size() - 1) {
+          file << ",";
+        }
+      }
+      if (rep != iterations -1) {
+        file << "||";
+      }
+    }
     if (timing) {
       cout << "time, " << graph_file << ", " << i << ", " << timer() - elt << "\n";
       cout.flush();
     }
-    for (int j = 0; j < tree_counts.size(); ++j) {
-      file << tree_counts.at(j);
-      if (j != tree_counts.size() - 1) {
-        file << ',';
-      } 
-    }
-    file << '\n';
+    file << "\n\n";
     file.flush();
   }
 
