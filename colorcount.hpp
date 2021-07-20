@@ -358,10 +358,7 @@ if (verbose) {
 
     int *index_nbrs = (int *) malloc(num_verts_graph * sizeof(int));
     assert(index_nbrs != NULL);
-    for(int i = 0; i < num_verts_graph; ++i){
-      index_nbrs[i] = 0;
-    }
-      
+
 
     int *valid_nbrs = (int *) malloc(max_degree * sizeof(int));
     assert(valid_nbrs != NULL);
@@ -375,6 +372,10 @@ if (verbose) {
     for (int v = 0; v < num_verts_graph; ++v)
     {
       valid_nbrs_count = 0;
+      for(int i = 0; i < num_verts_graph; ++i){
+        index_nbrs[i] = 0;
+      }
+      
       
       if (dt.is_vertex_init_active(v))
       {
@@ -426,7 +427,6 @@ if (verbose) {
                     }
                     else{
                       color_count += count_a * (1.0 - edge_prob) * dt.get_passive(i, comb_indexes_p[p]);
-                      index_nbrs[i] = 0;
                     }
                   }
   

@@ -151,7 +151,7 @@ void read_in_graph(Graph& g, char* graph_file, bool labeled,
 void run_single(char* graph_file, char* template_file, bool labeled,
                 bool do_vert, bool do_gdd,
                 int iterations, 
-                bool do_outerloop, bool calc_auto, bool verbose, bool main, bool isCentered)
+                bool do_outerloop, bool calc_auto, bool verbose, bool random_graphs, float p, bool main, bool isCentered)
 {
   Graph g;
   Graph t;
@@ -199,7 +199,7 @@ void run_single(char* graph_file, char* template_file, bool labeled,
 #pragma omp parallel reduction(+:full_count)
 {
     int tid = omp_get_thread_num();
-    full_count += graph_count[tid].do_full_count(&t, labels_t, iter, false, 0, isCentered);
+    full_count += graph_count[tid].do_full_count(&t, labels_t, iter, random_graphs, p, isCentered);
     if (do_gdd || do_vert)
       vert_counts[tid] = graph_count[tid].get_vert_counts();
 }   
@@ -222,7 +222,7 @@ void run_single(char* graph_file, char* template_file, bool labeled,
     colorcount graph_count;
     graph_count.init(g, labels_g, labeled, 
                       calc_auto, do_gdd, do_vert, verbose);
-    full_count += graph_count.do_full_count(&t, labels_t, iterations, false, 0, isCentered);
+    full_count += graph_count.do_full_count(&t, labels_t, iterations, random_graphs, p, isCentered);
 
     if (do_gdd || do_vert)
     {
@@ -468,14 +468,10 @@ void generate_graph(int n, float p, char filename[100])
 
 }
 
-void sim1() {
+void sim1(int m, int iterations, float p, bool random_graphs, bool isCentered) {
     //runs simulation 1
 
-    float p = 0.01;
     char tree_file[] = "template.graph";
-
-    int iterations = 1000;
-    int m = 20;
 
     std::vector<int> m_sizes;
 
@@ -493,8 +489,7 @@ void sim1() {
         char graph_file [100];
         sprintf (graph_file, "graphs/%d.txt", i);
         generate_graph(i, p, graph_file);
-        
-        run_single(graph_file, tree_file, false, false, false, iterations, true, true, false, false, true);
+        run_single(graph_file, tree_file, false, false, false, iterations, true, true, false, random_graphs, p, false, isCentered);
         cout << ", ";
         cout.flush();   
 
@@ -1161,7 +1156,8 @@ int main(int argc, char** argv)
     }
   }
   else if(sim_1) {
-    sim1();
+    printf("%d %d %f", m, iterations, p);
+    sim1(m, iterations, p, true, isCentered);
   }
   else if(sim_2) {
     if(n && p && s && m && iterations) {
@@ -1201,7 +1197,7 @@ int main(int argc, char** argv)
     run_single(graph_fileA, template_file, labeled,                
                 do_vert, do_gdd,
                 iterations, do_outerloop, calculate_automorphism,
-                verbose, true, isCentered);
+                verbose, false, 0, true, isCentered);
   }
   else if (batch_file != NULL)
   {
