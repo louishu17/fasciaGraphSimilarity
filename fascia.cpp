@@ -919,7 +919,7 @@ double samp_comp(char* graph_fileA, char* graph_fileB, int motif,
 }
 
 void all_trees(char* graph_file, char* out, int iterations, 
-        bool do_outerloop) {
+        bool do_outerloop, bool isCentered) {
 
   double elt;
 
@@ -930,7 +930,7 @@ void all_trees(char* graph_file, char* out, int iterations,
     if (timing) {
     elt = timer();
     }
-    vector<double> tree_counts = run_motif(graph_file, i, false, false, iterations, do_outerloop, true, false, false, 0, false, true);
+    vector<double> tree_counts = run_motif(graph_file, i, false, false, iterations, do_outerloop, true, false, false, 0, false, isCentered);
     if (timing) {
       cout << "time, " << graph_file << ", " << i << ", " << timer() - elt << "\n";
       cout.flush();
@@ -950,7 +950,8 @@ void all_trees(char* graph_file, char* out, int iterations,
 }
 
 void trees_for_graphs(string file_list, int iterations, 
-        bool do_outerloop) {
+        bool do_outerloop, bool isCentered) {
+
 
   string directory_in = "small_fb";
   string directory_out = "count_trees_no";
@@ -964,10 +965,10 @@ void trees_for_graphs(string file_list, int iterations,
   char in [100];
   char out [100];
 
-  while (getline(file, line)) {;
+  while (getline(file, line)) {
     sprintf (in, "%s/%s", directory_in.c_str(), line.c_str());
     sprintf (out, "%s/counts_%s", directory_out.c_str(), line.c_str());
-    all_trees(in, out, iterations, do_outerloop);
+    all_trees(in, out, iterations, do_outerloop, isCentered);
   }
   file.close();
 
@@ -1186,7 +1187,7 @@ int main(int argc, char** argv)
     samp_comp(graph_fileA, graph_fileB, motif, do_outerloop, iterations, it_edges, samp_nodes, samp_edges);
   }
   else if (count_trees) {
-    trees_for_graphs(graph_fileA, iterations, do_outerloop);
+    trees_for_graphs(graph_fileA, iterations, do_outerloop, isCentered);
   }
   else if (motif)
   {

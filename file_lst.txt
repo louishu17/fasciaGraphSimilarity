@@ -1,6 +1,1 @@
 Caltech36.txt
-Haverford76.txt
-Reed98.txt
-Simmons81.txt
-Swarthmore42.txt
-USFCA72.txt

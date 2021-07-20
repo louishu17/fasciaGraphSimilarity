@@ -358,7 +358,6 @@ if (verbose) {
 
     int *index_nbrs = (int *) malloc(num_verts_graph * sizeof(int));
     assert(index_nbrs != NULL);
-
     for(int i = 0; i < num_verts_graph; ++i){
       index_nbrs[i] = 0;
     }
@@ -427,6 +426,7 @@ if (verbose) {
                     }
                     else{
                       color_count += count_a * (1.0 - edge_prob) * dt.get_passive(i, comb_indexes_p[p]);
+                      index_nbrs[i] = 0;
                     }
                   }
   
