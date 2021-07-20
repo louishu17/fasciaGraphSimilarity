@@ -377,6 +377,9 @@ if (verbose) {
     for (int v = 0; v < num_verts_graph; ++v)
     {
       // valid_nbrs_count = 0;
+        for(int i = 0; i < num_verts_graph; ++i){
+          index_nbrs[i] = 0;
+        }
       
       if (dt.is_vertex_init_active(v))
       {
@@ -386,9 +389,7 @@ if (verbose) {
 #if COLLECT_DATA
         ++read_count_loop;
 #endif 
-        for(int i = 0; i < num_verts_graph; ++i){
-          index_nbrs[i] = 0;
-        }
+
         for (int i = 0; i < end; ++i) {
           int adj_i = adjs[i];
           if (dt.is_vertex_init_passive(adj_i)) {
