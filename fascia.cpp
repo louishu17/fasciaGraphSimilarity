@@ -471,10 +471,35 @@ void generate_graph(int n, float p, char filename[100])
 
 }
 
+double calculateExpectedValue(int n, float p, int K, int aut) {
+    printf("%d %f %d %d", n, p, K, aut);
+    double fac = 1;
+
+    for(int i = n; i > n - K - 1; i--) {
+        fac *= i;
+    }
+
+    fac /= aut;
+    fac *= pow(p,K);
+    return fac;
+}
+
 void sim1(int m, int iterations, float p, bool random_graphs, bool isCentered) {
     //runs simulation 1
+    Graph t;
+    int* srcs_t;
+    int* dsts_t;
+    int* labels_t;
 
     char tree_file[] = "template.graph";
+
+    read_in_graph(t, tree_file, false, srcs_t, dsts_t, labels_t);
+    int aut = count_automorphisms(t);
+
+    int K = 6;
+    double r = factorial(K+1)/pow(K+1, K+1);
+    int tconst = floor(1/pow(r,2));
+    
 
     std::vector<int> m_sizes;
 
@@ -488,12 +513,19 @@ void sim1(int m, int iterations, float p, bool random_graphs, bool isCentered) {
     //m_sizes.push_back(10000);  
 
     std::vector<double> fin_counts;
+    std::vector<double> expected_counts;
     double val;
+    double expectedVal;
+
+    cout << "\n";
 
     for (const int& i : m_sizes) {
-      cout << i << "\n";
-      cout << "[";
       val = 0;
+      expectedVal = 0;
+      cout << i << "\n";
+      expectedVal = calculateExpectedValue(i, p, K, aut);
+      cout << "\nExpected Value: " << expectedVal << "\n";
+      cout << "[";
       for(int j = 0; j < m; ++j) {
         char graph_file [100];
         sprintf (graph_file, "graphs/%d.txt", i);
@@ -501,8 +533,6 @@ void sim1(int m, int iterations, float p, bool random_graphs, bool isCentered) {
         val = val + run_single(graph_file, tree_file, false, false, false, iterations, true, true, false, random_graphs, p, false, isCentered);
         cout << ", ";
         cout.flush();   
-
-
       }
       val = val / m;
       fin_counts.push_back(val);
@@ -510,10 +540,17 @@ void sim1(int m, int iterations, float p, bool random_graphs, bool isCentered) {
       cout<<'\b';
       cout<<"]\n";
       cout.flush();      
+      expected_counts.push_back(expectedVal);
     }
 
     cout << '[';
     for (const double& d : fin_counts) {
+      cout << d << ',';
+    }
+    cout << "]\n";
+
+    cout << '[';
+    for (const double& d : expected_counts) {
       cout << d << ',';
     }
     cout << "]\n";
