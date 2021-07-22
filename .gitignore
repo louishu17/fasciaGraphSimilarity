@@ -1,5 +1,6 @@
 fascia
 .DS_Store
+fascia.dSYM
 
 # exclude everything
 graphs/*
