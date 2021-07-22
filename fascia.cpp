@@ -427,6 +427,11 @@ double run_compare_graphs(char* graph_fileA, char* graph_fileB, int motif,
 
   double stat = std::inner_product(std::begin(a), std::end(a), std::begin(b), 0.0);
 
+  a.clear();
+  a.shrink_to_fit();
+  b.clear();
+  b.shrink_to_fit();
+
   if (timing && main) {
     elt = timer() - elt;
     printf("Timing: %f\n", elt);
