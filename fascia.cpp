@@ -355,6 +355,8 @@ std::vector<double> run_batch(char* graph_file, char* batch_file, bool labeled,
     delete [] template_file;
   }
 
+  if_batch.close();
+
 if ((timing || verbose) && main) {
   elt = timer() - elt;
   printf("Total time:\n\t%9.6lf seconds\n", elt);
