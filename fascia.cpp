@@ -901,17 +901,55 @@ void all_comp(string file_list, bool do_vert, bool do_gdd, int iterations, bool 
 
 }
 
+void samp_graphs(char* graph, int iterations, int it_edges, int samp_nodes, int samp_edges) {
+
+  string directory_in = "small_fb";
+  string directory_out = "samp_run";
+
+  char in [100];
+  char out_n [100];
+  char out_e [100];
+
+  sprintf(in, "%s/%s", directory_in.c_str(), graph);
+    for (int node_rep = 0; node_rep < iterations; ++node_rep) {
+      sprintf(out_n, "%s/n%d_%s", directory_out.c_str(), node_rep, graph);
+      sample_nodes(samp_nodes, in, out_n);
+      for (int edge_rep = 0; edge_rep < it_edges; ++edge_rep) {
+        sprintf(out_e, "%s/e%d_n%d_%s", directory_out.c_str(), edge_rep, node_rep, graph);
+        sample_edges(samp_edges, out_n, out_e);
+      }
+    }
+}
+
+void samp_graphs_lst(string file_list, int iterations, int it_edges, int samp_nodes, int samp_edges) {
+
+  ifstream file(file_list);
+  string line;
+  char name [100];
+
+  while (getline(file, line)) {
+    strncpy(name, line.c_str(), 100);
+    samp_graphs(name, iterations, it_edges, samp_nodes, samp_edges);
+  }
+  file.close();
+}
+
 double samp_comp(char* graph_fileA, char* graph_fileB, int motif, 
-                bool do_outerloop, int iterations, int it_edges, int samp_nodes, int samp_edges, bool calc_auto, bool isCentered)
+                bool do_outerloop, int iterations, int it_edges, int samp_nodes, int samp_edges, bool calc_auto, bool isCentered, bool generateGraphs)
 {
 
-  char * directory = "small_fb/";
-  char * out_dir = "samp_run/";
+  if (generateGraphs) {
+    samp_graphs(graph_fileA, iterations, it_edges, samp_nodes, samp_edges);
+    samp_graphs(graph_fileB, iterations, it_edges, samp_nodes, samp_edges);
+  }
+
+  string directory = "small_fb";
+  string out_dir = "samp_run";
 
   char in_1 [100];
-  sprintf(in_1, "%s%s", directory, graph_fileA);
+  sprintf(in_1, "%s/%s", directory.c_str(), graph_fileA);
   char in_2 [100];
-  sprintf(in_2, "%s%s", directory, graph_fileB);
+  sprintf(in_2, "%s/%s", directory.c_str(), graph_fileB);
 
   int n_A;
   int edges_A;
@@ -942,21 +980,12 @@ double samp_comp(char* graph_fileA, char* graph_fileB, int motif,
 
   vector<double> simi_scores;
 
-  sprintf(out_n_1, "%s1_n_%s", out_dir, graph_fileA);
-  sprintf(out_n_2, "%s2_n_%s", out_dir, graph_fileB);
-  sprintf(out_e_1, "%s1_e_%s", out_dir, graph_fileA);
-  sprintf(out_e_2, "%s2_e_%s", out_dir, graph_fileB);
-
   for (int n_rep = 0; n_rep < iterations; ++n_rep) {
-    //sprintf(out_n_1, "%s1_n%d_%s", out_dir, n_rep, graph_fileA);
-    //sprintf(out_n_2, "%s2_n%d_%s", out_dir, n_rep, graph_fileB);
-    sample_nodes(samp_nodes, in_1, out_n_1);
-    sample_nodes(samp_nodes, in_2, out_n_2);
+    sprintf(out_n_1, "%s/n%d_%s", out_dir.c_str(), n_rep, graph_fileA);
+    sprintf(out_n_2, "%s/n%d_%s", out_dir.c_str(), n_rep, graph_fileB);
     for (int e_rep = 0; e_rep < it_edges; ++e_rep) {
-      //sprintf(out_e_1, "%s1_e%d_n%d_%s", out_dir, e_rep, n_rep, graph_fileA);
-      //sprintf(out_e_2, "%s2_e%d_n%d_%s", out_dir, e_rep, n_rep, graph_fileB);
-      sample_edges(samp_edges, out_n_1, out_e_1);
-      sample_edges(samp_edges, out_n_2, out_e_2);
+      sprintf(out_e_1, "%s/e%d_n%d_%s", out_dir.c_str(), e_rep, n_rep, graph_fileA);
+      sprintf(out_e_2, "%s/e%d_n%d_%s", out_dir.c_str(), e_rep, n_rep, graph_fileB);
       simi_val = run_compare_graphs(out_e_1, out_e_2, motif, 
                 false, false, 
                 iterations, do_outerloop, calc_auto, 
@@ -964,11 +993,6 @@ double samp_comp(char* graph_fileA, char* graph_fileB, int motif,
       simi_scores.push_back(simi_val);
     }
   }
-
-  remove(out_n_1);
-  remove(out_n_2);
-  remove(out_e_1);
-  remove(out_e_2);
 
   double avg = 0;
   for (int i = 0; i <  simi_scores.size(); ++i) {
@@ -985,8 +1009,13 @@ double samp_comp(char* graph_fileA, char* graph_fileB, int motif,
 }
 
 vector<double> samp_comp_all_n(char* graph_fileA, char* graph_fileB,
-                bool do_outerloop, int iterations, int it_edges, int samp_nodes, int samp_edges, bool calc_auto, bool isCentered)
+                bool do_outerloop, int iterations, int it_edges, int samp_nodes, int samp_edges, bool calc_auto, bool isCentered, bool generateGraphs)
 {
+
+  if (generateGraphs) {
+    samp_graphs(graph_fileA, iterations, it_edges, samp_nodes, samp_edges);
+    samp_graphs(graph_fileB, iterations, it_edges, samp_nodes, samp_edges);
+  }
 
   vector<double> vals;
   double temp_val;
@@ -995,7 +1024,7 @@ vector<double> samp_comp_all_n(char* graph_fileA, char* graph_fileB,
   int max_motif = 10;
 
   for (int motif = min_motif; motif <= max_motif; ++motif) {
-    temp_val = samp_comp(graph_fileA, graph_fileB, motif, do_outerloop, iterations, it_edges, samp_nodes, samp_edges, calc_auto, isCentered);
+    temp_val = samp_comp(graph_fileA, graph_fileB, motif, do_outerloop, iterations, it_edges, samp_nodes, samp_edges, calc_auto, isCentered, false);
     vals.push_back(temp_val);
     if (motif != max_motif) {
       cout << ",";
@@ -1048,7 +1077,6 @@ void all_trees(char* graph_file, char* out, int iterations,
 void trees_for_graphs(string file_list, int iterations, 
         bool do_outerloop, bool isCentered) {
 
-
   string directory_in = "small_fb";
   string directory_out = "count_trees_no";
   if (do_outerloop) {
@@ -1068,7 +1096,7 @@ void trees_for_graphs(string file_list, int iterations,
   }
   file.close();
 
-  }
+}
 
 int main(int argc, char** argv)
 {
@@ -1104,9 +1132,10 @@ int main(int argc, char** argv)
   int m = 0;
   bool isCentered = false;
   bool generateGraphs = false;
+  bool samp_first = false;
 
   char c;
-  while ((c = getopt (argc, argv, "g:f:t:b:m:n:p:s:j:i:k:A:B:C:GDuwqacdvrohlxyze")) != -1)
+  while ((c = getopt (argc, argv, "g:f:t:b:m:n:p:s:j:i:k:A:B:C:GDEuwqacdvrohlxyze")) != -1)
   {
     switch (c)
     {
@@ -1181,6 +1210,8 @@ int main(int argc, char** argv)
         break;
       case 'e':
         all_n_sample = true;
+      case 'E':
+        samp_first = true;
       case 'z':
         count_trees = true;
         break;
@@ -1215,7 +1246,7 @@ int main(int argc, char** argv)
         abort();
     }
   } 
-  if(!generateGraphs && !sim_1 & !sim_2 & !many_comp & !small_sample &!count_trees &!all_n_sample)
+  if(!generateGraphs && !sim_1 & !sim_2 & !many_comp & !small_sample &!count_trees &!all_n_sample &!samp_first)
   {
     if(argc < 3)
     {
@@ -1250,7 +1281,7 @@ int main(int argc, char** argv)
     }
   }
 
-  if(generateGraphs) {
+  if(generateGraphs &!small_sample &!all_n_sample) {
     if(n && p && s && m) {
       printf("%d %f %f %d", n, p, s, m);
       generate_both_graphs(n, p, s, m);
@@ -1284,10 +1315,17 @@ int main(int argc, char** argv)
     all_comp(graph_fileA, do_vert, do_gdd, iterations, do_outerloop, calculate_automorphism, verbose);
   }
   else if (small_sample) {
-    samp_comp(graph_fileA, graph_fileB, motif, do_outerloop, iterations, it_edges, samp_nodes, samp_edges, calculate_automorphism, isCentered);
+    samp_comp(graph_fileA, graph_fileB, motif, do_outerloop, iterations, it_edges, samp_nodes, samp_edges, calculate_automorphism, isCentered, generateGraphs);
+  }
+  else if (samp_first &graph_fileB == NULL) {
+    samp_graphs_lst(graph_fileA, iterations, it_edges, samp_nodes, samp_edges);
+  }
+  else if (samp_first &graph_fileB != NULL) {
+    samp_graphs(graph_fileA, iterations, it_edges, samp_nodes, samp_edges);
+    samp_graphs(graph_fileB, iterations, it_edges, samp_nodes, samp_edges);
   }
   else if (all_n_sample) {
-    samp_comp_all_n(graph_fileA, graph_fileB, do_outerloop, iterations, it_edges, samp_nodes, samp_edges, calculate_automorphism, isCentered);
+    samp_comp_all_n(graph_fileA, graph_fileB, do_outerloop, iterations, it_edges, samp_nodes, samp_edges, calculate_automorphism, isCentered, generateGraphs);
   }
   else if (count_trees) {
     trees_for_graphs(graph_fileA, iterations, do_outerloop, isCentered);
