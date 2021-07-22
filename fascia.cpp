@@ -427,10 +427,8 @@ double run_compare_graphs(char* graph_fileA, char* graph_fileB, int motif,
 
   double stat = std::inner_product(std::begin(a), std::end(a), std::begin(b), 0.0);
 
-  a.clear();
-  a.shrink_to_fit();
-  b.clear();
-  b.shrink_to_fit();
+  std::vector<double>().swap(a);
+  std::vector<double>().swap(b);
 
   if (timing && main) {
     elt = timer() - elt;
@@ -998,6 +996,7 @@ void all_trees(char* graph_file, char* out, int iterations,
         file << "||";
       }
       file.flush();
+      std::vector<double>().swap(tree_counts);
     }
     if (timing) {
       cout << "time, " << graph_file << ", " << i << ", " << timer() - elt << "\n";
