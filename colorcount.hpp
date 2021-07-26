@@ -377,10 +377,10 @@ if (verbose) {
     for (int v = 0; v < num_verts_graph; ++v)
     {
       // valid_nbrs_count = 0;
-        for(int i = 0; i < num_verts_graph; ++i){
-          index_nbrs[i] = 0;
-        }
-      
+      for(int i = 0; i < num_verts_graph; ++i){
+        index_nbrs[i] = 0;
+      }
+    
       if (dt.is_vertex_init_active(v))
       {
         int* adjs = g->adjacent_vertices(v);

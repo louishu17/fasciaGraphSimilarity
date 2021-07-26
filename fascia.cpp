@@ -655,7 +655,7 @@ void generate_both_graphs(int n, float p, float s, int m) {
 
 }
 
-void sim2(int n, float p, float s, int klow, int khigh, int m, int iterations, bool isCentered) {
+void sim2(char* graph_fileA, char* graph_fileB, int n, float p, float s, int klow, int khigh, int m, int iterations, bool isCentered) {
     using std::chrono::high_resolution_clock;
     using std::chrono::duration_cast;
     using std::chrono::duration;
@@ -664,42 +664,10 @@ void sim2(int n, float p, float s, int klow, int khigh, int m, int iterations, b
 
     for(int k = klow+1; k < khigh+2; ++k) {
       auto t1 = high_resolution_clock::now();
-      cout << "\n\n" << k-1;
-      cout << "\ncorr";
-      cout << "\n[";
-      for (int m_rep = 1; m_rep < m + 1; ++m_rep) {
-      const char folderCorr [] = "sim2_corr/";
-      char graphACorr [100];
-      sprintf(graphACorr, "%s%d_%dA_%.5f_%.5f_corr.txt", folderCorr, m_rep, n, p, s);
-      char graphBCorr [100];
-      sprintf(graphBCorr, "%s%d_%dB_%.5f_%.5f_corr.txt", folderCorr, m_rep, n, p, s);
-      run_compare_graphs(graphACorr, graphBCorr, k, false, false, iterations, true, true, false, true, p, true, isCentered);
 
-      cout << ", ";
-      cout.flush();
+      cout << "\n";
 
-      }
-      cout<<'\b';
-      cout<<'\b';
-      cout<<"]\n";
-
-      cout << "\nind";
-      cout << "\n[";
-      for (int m_rep = 1; m_rep < m + 1; ++m_rep) {
-      const char folderInd [] = "sim2_ind/";
-      char graphAInd [100];
-      sprintf(graphAInd, "%s%d_%dA_%.5f_%.5f_ind.txt", folderInd, m_rep, n, p, s);
-      char graphBInd [100];
-      sprintf(graphBInd, "%s%d_%dB_%.5f_%.5f_ind.txt", folderInd, m_rep, n, p, s);
-
-      run_compare_graphs(graphAInd, graphBInd, k, false, false, iterations, true, true, false, true, p, true, isCentered);
-
-      cout << ", ";
-      cout.flush();
-      }
-      cout<<'\b';
-      cout<<'\b';
-      cout<<"]\n";
+      run_compare_graphs(graph_fileA, graph_fileB, k, false, false, iterations, true, true, false, true, p, true, isCentered);
 
       auto t2 = high_resolution_clock::now();
 
@@ -707,7 +675,7 @@ void sim2(int n, float p, float s, int klow, int khigh, int m, int iterations, b
 
       duration<double, std::milli> ms_double = t2 - t1;
 
-      std::cout << ms_double.count() << "ms";
+      std::cout << "\n" << ms_double.count() << "ms";
       cout.flush();
     }
 
@@ -1150,7 +1118,8 @@ int main(int argc, char** argv)
   bool verbose = false;
   bool compare_graphs = false;
   bool sim_1 = false;
-  bool sim_2 = false;
+  bool sim2_corr = false;
+  bool sim2_ind = false;
   int klow = 0;
   bool many_comp = false;
   bool small_sample = false;
@@ -1170,7 +1139,7 @@ int main(int argc, char** argv)
   bool samp_first = false;
 
   char c;
-  while ((c = getopt (argc, argv, "g:f:t:b:m:n:p:s:j:i:k:A:B:C:GDEFuwqacdvrohlxyze")) != -1)
+  while ((c = getopt (argc, argv, "g:f:t:b:m:n:p:s:j:i:k:A:B:C:GDEFuWXqacdvrohlxyze")) != -1)
   {
     switch (c)
     {
@@ -1231,8 +1200,11 @@ int main(int argc, char** argv)
       case 'u':
         sim_1 = true;
         break;
-      case 'w':
-        sim_2 = true;
+      case 'W':
+        sim2_corr = true;
+        break;
+      case 'X':
+        sim2_ind = true;
         break;
       case 'q':
         compare_graphs = true;
@@ -1286,7 +1258,7 @@ int main(int argc, char** argv)
         abort();
     }
   } 
-  if(!generateGraphs && !sim_1 && !sim_2 && !many_comp && !small_sample && !count_trees && !all_n_sample && !samp_first && !samp_from_lst)
+  if(!generateGraphs && !sim_1 && !sim2_corr && !sim2_ind && !many_comp && !small_sample && !count_trees && !all_n_sample && !samp_first && !samp_from_lst)
   {
     if(argc < 3)
     {
@@ -1334,16 +1306,35 @@ int main(int argc, char** argv)
     printf("%d %d %f", m, iterations, p);
     sim1(m, iterations, p, true, isCentered);
   }
-  else if(sim_2) {
+  else if(sim2_corr) {
+    const char folderCorr [] = "sim2_corr/";
+    char graphACorr [100];
+    sprintf(graphACorr, "%s%d_%dA_%.5f_%.5f_corr.txt", folderCorr, m, n, p, s);
+    char graphBCorr [100];
+    sprintf(graphBCorr, "%s%d_%dB_%.5f_%.5f_corr.txt", folderCorr, m, n, p, s);
     if(n && p && s && m && iterations) {
-        printf("%d %f %f %d %d %d %d %d", n, p, s, klow, motif, m, iterations, isCentered);
-        sim2(n, p, s, klow, motif, m, iterations, isCentered);
+        printf("%d %f %f %d %d %d %d %d correlated", n, p, s, klow, motif, m, iterations, isCentered);
+        sim2(graphACorr, graphBCorr, n, p, s, klow, motif, m, iterations, isCentered);
     }
     else{
       printf("\nMissing Arguments\n");
       printf("%d %f %f %d %d %d %d", n, p, s, klow, motif, m, iterations);
     }
-
+  }
+  else if(sim2_ind) {
+    const char folderInd [] = "sim2_ind/";
+    char graphAInd [100];
+    sprintf(graphAInd, "%s%d_%dA_%.5f_%.5f_ind.txt", folderInd, m, n, p, s);
+    char graphBInd [100];
+    sprintf(graphBInd, "%s%d_%dB_%.5f_%.5f_ind.txt", folderInd, m, n, p, s);
+    if(n && p && s && m && iterations) {
+        printf("%d %f %f %d %d %d %d %d indepedent", n, p, s, klow, motif, m, iterations, isCentered);
+        sim2(graphAInd, graphBInd, n, p, s, klow, motif, m, iterations, isCentered);
+    }
+    else{
+      printf("\nMissing Arguments\n");
+      printf("%d %f %f %d %d %d %d", n, p, s, klow, motif, m, iterations);
+    } 
   }
   else if(compare_graphs && motif) {
     run_compare_graphs(graph_fileA, graph_fileB, motif,
