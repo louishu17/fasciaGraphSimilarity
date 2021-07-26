@@ -49,3 +49,9 @@ count_trees_o/*
 
 # exception to the rule
 !count_trees_o/gitkeep.txt
+
+# exclude everything
+samp_file_lists/*
+
+# exception to the rule
+!samp_file_lsts/gitkeep.txt

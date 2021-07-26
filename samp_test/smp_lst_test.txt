@@ -1,0 +1,6 @@
+Amherst41.txt,Amherst41.txt
+Amherst41.txt,Oberlin44.txt
+Amherst41.txt,Hamilton46.txt
+Oberlin44.txt,Oberlin44.txt
+Oberlin44.txt,Hamilton46.txt
+Hamilton46.txt,Hamilton46.txt
