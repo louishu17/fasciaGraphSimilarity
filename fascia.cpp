@@ -831,6 +831,7 @@ void sample_edges(int sample_edges, char in [100], char out [100]) {
 
 void all_comp(string file_list, bool do_vert, bool do_gdd, int iterations, bool do_outerloop, bool calc_auto, bool verbose) {
   
+  int mot_min = 3;
   int mot_mx = 10;
   string directory = "small_fb";
 
@@ -850,7 +851,7 @@ void all_comp(string file_list, bool do_vert, bool do_gdd, int iterations, bool 
   string temp_path;
   double comp_val;
 
-  for (int n = 3; n <= mot_mx; ++n) {
+  for (int n = mot_min; n <= mot_mx; ++n) {
     for (int j = 0; j < graphs.size(); ++j) {
       sprintf(nameB, graphs.at(j).c_str());
       sprintf (graph_fileB, "%s/%s", directory.c_str(), nameB);
@@ -960,7 +961,7 @@ double samp_comp(char* graph_fileA, char* graph_fileB, int motif,
       sprintf(out_e_2, "%s/e%d_%s", out_dir.c_str(), r2, graph_fileB);
       simi_val = run_compare_graphs(out_e_1, out_e_2, motif, 
                 false, false, 
-                iterations, do_outerloop, calc_auto, 
+                1, do_outerloop, calc_auto, 
                 false, false, 0, false, isCentered);
       simi_scores.push_back(simi_val);
     }
@@ -999,8 +1000,8 @@ vector<double> samp_comp_all_n(char* graph_fileA, char* graph_fileB,
   vector<double> vals;
   double temp_val;
 
-  int min_motif = 3;
-  int max_motif = 10;
+  int min_motif = 4;
+  int max_motif = 8;
 
   for (int motif = min_motif; motif <= max_motif; ++motif) {
     temp_val = samp_comp(graph_fileA, graph_fileB, motif, do_outerloop, iterations, it_edges, samp_nodes, samp_edges, calc_auto, isCentered, false);
@@ -1040,13 +1041,15 @@ void samp_all_dcc(string file_lst,
 void all_trees(char* graph_file, char* out, int iterations, 
         bool do_outerloop, bool isCentered) {
 
+  int min_motif = 5;
+  int max_motif = 5;
   double elt;
 
   ofstream file(out);
   file << graph_file << '\n';
   vector<double> tree_counts;
 
-  for (int i = 3; i <= 10; ++i) {
+  for (int i = min_motif; i <= max_motif; ++i) {
     if (timing) {
     elt = timer();
     }
