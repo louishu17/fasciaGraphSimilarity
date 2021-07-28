@@ -1,3 +1,6 @@
-Amherst41.txt
-Oberlin44.txt
-Hamilton46.txt
+Amherst41.txt,Amherst41.txt
+Amherst41.txt,American75.txt
+Amherst41.txt,Auburn71.txt
+American75.txt,American75.txt
+American75.txt,Auburn71.txt
+Auburn71.txt,Auburn71.txt

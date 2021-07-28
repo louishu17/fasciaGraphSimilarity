@@ -907,7 +907,7 @@ void samp_graphs_lst(string file_list, int iterations, int it_edges, int samp_no
 }
 
 double samp_comp(char* graph_fileA, char* graph_fileB, int motif, 
-                bool do_outerloop, int iterations, int it_edges, int samp_nodes, int samp_edges, bool calc_auto, bool isCentered, bool generateGraphs)
+                bool do_outerloop, int iterations, int it_edges, int samp_nodes, int samp_edges, int comp_it, bool calc_auto, bool isCentered, bool generateGraphs)
 {
   
   double elt;
@@ -961,7 +961,7 @@ double samp_comp(char* graph_fileA, char* graph_fileB, int motif,
       sprintf(out_e_2, "%s/e%d_%s", out_dir.c_str(), r2, graph_fileB);
       simi_val = run_compare_graphs(out_e_1, out_e_2, motif, 
                 false, false, 
-                1, do_outerloop, calc_auto, 
+                comp_it, do_outerloop, calc_auto, 
                 false, false, 0, false, isCentered);
       simi_scores.push_back(simi_val);
     }
@@ -989,7 +989,7 @@ double samp_comp(char* graph_fileA, char* graph_fileB, int motif,
 }
 
 vector<double> samp_comp_all_n(char* graph_fileA, char* graph_fileB,
-                bool do_outerloop, int iterations, int it_edges, int samp_nodes, int samp_edges, bool calc_auto, bool isCentered, bool generateGraphs)
+                bool do_outerloop, int iterations, int it_edges, int samp_nodes, int samp_edges, int comp_it, bool calc_auto, bool isCentered, bool generateGraphs)
 {
 
   if (generateGraphs) {
@@ -1000,11 +1000,11 @@ vector<double> samp_comp_all_n(char* graph_fileA, char* graph_fileB,
   vector<double> vals;
   double temp_val;
 
-  int min_motif = 4;
-  int max_motif = 8;
+  int min_motif = 5;
+  int max_motif = 5;
 
   for (int motif = min_motif; motif <= max_motif; ++motif) {
-    temp_val = samp_comp(graph_fileA, graph_fileB, motif, do_outerloop, iterations, it_edges, samp_nodes, samp_edges, calc_auto, isCentered, false);
+    temp_val = samp_comp(graph_fileA, graph_fileB, motif, do_outerloop, iterations, it_edges, samp_nodes, samp_edges, comp_it, calc_auto, isCentered, false);
     vals.push_back(temp_val);
     cout << "\n";
     cout.flush();
@@ -1014,7 +1014,7 @@ vector<double> samp_comp_all_n(char* graph_fileA, char* graph_fileB,
 }
 
 void samp_all_dcc(string file_lst, 
-                bool do_outerloop, int iterations, int it_edges, int samp_nodes, int samp_edges, bool calc_auto, bool isCentered)
+                bool do_outerloop, int iterations, int it_edges, int samp_nodes, int samp_edges, int comp_it, bool calc_auto, bool isCentered)
 {
 
   string directory_in = "small_fb";
@@ -1032,7 +1032,7 @@ void samp_all_dcc(string file_lst,
     getline(ss, file2, ',');
     strncpy(in1, file1.c_str(), 100);
     strncpy(in2, file2.c_str(), 100);
-    samp_comp_all_n(in1, in2, do_outerloop, iterations, it_edges, samp_nodes, samp_edges, calc_auto, isCentered, false);
+    samp_comp_all_n(in1, in2, do_outerloop, iterations, it_edges, samp_nodes, samp_edges, comp_it, calc_auto, isCentered, false);
   }
   file.close();
 
@@ -1132,6 +1132,7 @@ int main(int argc, char** argv)
   int it_edges = 1;
   int samp_nodes = 1000;
   int samp_edges = 1000;
+  int comp_it = 1;
   int motif = 0;
   int n = 0;
   float p = 0.0;
@@ -1142,7 +1143,7 @@ int main(int argc, char** argv)
   bool samp_first = false;
 
   char c;
-  while ((c = getopt (argc, argv, "g:f:t:b:m:n:p:s:j:i:k:A:B:C:GDEFuWXqacdvrohlxyze")) != -1)
+  while ((c = getopt (argc, argv, "g:f:t:b:m:n:p:s:j:i:k:A:B:C:H:GDEFuWXqacdvrohlxyze")) != -1)
   {
     switch (c)
     {
@@ -1193,6 +1194,9 @@ int main(int argc, char** argv)
         break;
       case 'C':
         samp_edges = atoi(optarg);
+        break;
+      case 'H':
+        comp_it = atoi(optarg);
         break;
       case 'G':
         generateGraphs = true;
@@ -1349,7 +1353,7 @@ int main(int argc, char** argv)
     all_comp(graph_fileA, do_vert, do_gdd, iterations, do_outerloop, calculate_automorphism, verbose);
   }
   else if (small_sample) {
-    samp_comp(graph_fileA, graph_fileB, motif, do_outerloop, iterations, it_edges, samp_nodes, samp_edges, calculate_automorphism, isCentered, generateGraphs);
+    samp_comp(graph_fileA, graph_fileB, motif, do_outerloop, iterations, it_edges, samp_nodes, samp_edges, comp_it, calculate_automorphism, isCentered, generateGraphs);
   }
   else if (samp_first && (graph_fileB == NULL)) {
     samp_graphs_lst(graph_fileA, iterations, it_edges, samp_nodes, samp_edges);
@@ -1359,10 +1363,10 @@ int main(int argc, char** argv)
     samp_graphs(graph_fileB, iterations, it_edges, samp_nodes, samp_edges);
   }
   else if (all_n_sample) {
-    samp_comp_all_n(graph_fileA, graph_fileB, do_outerloop, iterations, it_edges, samp_nodes, samp_edges, calculate_automorphism, isCentered, generateGraphs);
+    samp_comp_all_n(graph_fileA, graph_fileB, do_outerloop, iterations, it_edges, samp_nodes, samp_edges, comp_it, calculate_automorphism, isCentered, generateGraphs);
   }
   else if (samp_from_lst) {
-    samp_all_dcc(graph_fileA, do_outerloop, iterations, it_edges, samp_nodes, samp_edges, calculate_automorphism, isCentered);
+    samp_all_dcc(graph_fileA, do_outerloop, iterations, it_edges, samp_nodes, samp_edges, comp_it, calculate_automorphism, isCentered);
   }
   else if (count_trees) {
     trees_for_graphs(graph_fileA, iterations, do_outerloop, isCentered);
