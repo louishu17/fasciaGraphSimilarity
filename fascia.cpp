@@ -261,7 +261,7 @@ double run_single(char* graph_file, char* template_file, bool labeled,
 }
 
 
-std::vector<double> run_batch(char* graph_file, char* batch_file, bool labeled,
+void run_batch(char* graph_file, char* batch_file, bool labeled,
                 bool do_vert, bool do_gdd,
                 int iterations, 
                 bool do_outerloop, bool calc_auto, bool verbose, bool random_graphs, float p, bool main, bool isCentered)
@@ -366,8 +366,6 @@ if ((timing || verbose) && main) {
   delete [] srcs_g;
   delete [] dsts_g;
   delete [] labels_g;
-
-  return full_count_arr;
 }
 
 int main(int argc, char** argv)
@@ -376,7 +374,7 @@ int main(int argc, char** argv)
   char * graph_fileA = strdup("small_fb/Caltech36.txt");
   char * batch_file = strdup("motif/graphs_n5_3/batchfile");
   
-  for (int i = 1; i <= 1; ++i) {
+  for (int i = 1; i <= 10000; ++i) {
     run_batch(graph_fileA, batch_file, false, false, false, 1, false, true, false, false, 0, false, true);
   }
 
