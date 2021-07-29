@@ -62,7 +62,7 @@ public:
     // philox_k = philox4x32keyinit(philox_uk);
   }
   
-  double do_full_count(Graph* sub_graph, int* labels, int N, bool random_graphs, float p, bool isCentered)
+  double do_full_count(Graph* sub_graph, int* labels, int N, bool random_graphs, float p, bool isCentered, int colorKey)
   {  
     num_iter = N;
     t = sub_graph;
@@ -106,7 +106,7 @@ if (verbose) {
       if (verbose) {
          elt = timer();
       }
-      count += template_count(random_graphs, p, isCentered);        
+      count += template_count(random_graphs, p, isCentered, colorKey);        
       if (verbose) {          
          elt = timer() - elt;      
          printf("Time for count: %9.6lf seconds\n", elt);
@@ -155,7 +155,7 @@ private:
   }
 
 
-  double template_count(bool random_graphs, float edge_p, bool isCentered)
+  double template_count(bool random_graphs, float edge_p, bool isCentered, int colorKey)
   {  
     // do random coloring for full graph
     int num_verts = g->num_vertices();
@@ -177,7 +177,7 @@ private:
     r123::Philox4x32 rng;
     r123::Philox4x32::ctr_type rng_ctr = {{}};
     r123::Philox4x32::ukey_type rng_uk={{}};
-    rng_uk[0] = rand(); /* user-supplied key */
+    rng_uk[0] = colorKey; /* user-supplied key */
     r123::Philox4x32::key_type rng_key = rng_uk;
 
 #pragma omp for

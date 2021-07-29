@@ -200,7 +200,7 @@ double run_single(char* graph_file, char* template_file, bool labeled,
 #pragma omp parallel reduction(+:full_count)
 {
     int tid = omp_get_thread_num();
-    full_count += graph_count[tid].do_full_count(&t, labels_t, iter, random_graphs, p, isCentered);
+    full_count += graph_count[tid].do_full_count(&t, labels_t, iter, random_graphs, p, isCentered, 23);
     if (do_gdd || do_vert)
       vert_counts[tid] = graph_count[tid].get_vert_counts();
 }   
@@ -223,7 +223,7 @@ double run_single(char* graph_file, char* template_file, bool labeled,
     colorcount graph_count;
     graph_count.init(g, labels_g, labeled, 
                       calc_auto, do_gdd, do_vert, verbose);
-    full_count += graph_count.do_full_count(&t, labels_t, iterations, random_graphs, p, isCentered);
+    full_count += graph_count.do_full_count(&t, labels_t, iterations, random_graphs, p, isCentered, 23);
 
     if (do_gdd || do_vert)
     {
@@ -314,7 +314,7 @@ std::vector<double> run_batch(char* graph_file, char* batch_file, bool labeled,
 #pragma omp parallel reduction(+:full_count)
 {
       int tid = omp_get_thread_num();
-      full_count += graph_count[tid].do_full_count(&t, labels_t, iter, random_graphs, p, isCentered);
+      full_count += graph_count[tid].do_full_count(&t, labels_t, iter, random_graphs, p, isCentered, 24);
       if (do_gdd || do_vert)
         vert_counts[tid] = graph_count[tid].get_vert_counts();
 }   
@@ -341,7 +341,7 @@ std::vector<double> run_batch(char* graph_file, char* batch_file, bool labeled,
       colorcount graph_count;
       graph_count.init(g, labels_g, labeled, 
                         calc_auto, do_gdd, do_vert, verbose);
-      full_count += graph_count.do_full_count(&t, labels_t, iterations, random_graphs, p, isCentered);
+      full_count += graph_count.do_full_count(&t, labels_t, iterations, random_graphs, p, isCentered, 24);
     }
 
     // printf("%e\n", full_count);  
@@ -369,6 +369,7 @@ if ((timing || verbose) && main) {
 
   return full_count_arr;
 }
+
 
 
 std::vector<double> run_motif(char* graph_file, int motif, 
@@ -412,6 +413,185 @@ std::vector<double> run_motif(char* graph_file, int motif,
             do_vert, do_gdd,
             iterations, 
             do_outerloop, calc_auto, verbose, random_graphs, p, main, isCentered);
+}
+
+double run_algorithm2(char* graph_fileA, char* graph_fileB, int motif, bool labeled,
+                bool do_vert, bool do_gdd, 
+                int iterations, 
+                bool do_outerloop, bool calc_auto, bool verbose, bool random_graphs, float p, bool main, bool isCentered) {
+  Graph gA;
+  Graph gB;
+  Graph t;
+  int* srcs_gA;
+  int* dsts_gA;
+  int* labels_gA;
+  int* srcs_t;
+  int* dsts_t;
+  int* srcs_gB;
+  int* dsts_gB;
+  int* labels_gB;
+  int* labels_t;
+  char* vert_file;
+  char* gdd_file;
+
+  char* motif_batchfile = NULL;
+
+  switch(motif)
+  {
+    case(3):
+      motif_batchfile = strdup("motif/graphs_n3_1/batchfile");
+      break;
+    case(4):
+      motif_batchfile = strdup("motif/graphs_n4_2/batchfile");
+      break;
+    case(5):
+      motif_batchfile = strdup("motif/graphs_n5_3/batchfile");
+      break;
+    case(6):
+      motif_batchfile = strdup("motif/graphs_n6_6/batchfile");
+      break;
+    case(7):
+      motif_batchfile = strdup("motif/graphs_n7_11/batchfile");
+      break;
+    case(8):
+      motif_batchfile = strdup("motif/graphs_n8_23/batchfile");
+      break;
+    case(9):
+      motif_batchfile = strdup("motif/graphs_n9_47/batchfile");
+      break;
+    case(10):
+      motif_batchfile = strdup("motif/graphs_n10_106/batchfile");
+      break;
+    default:
+      break;
+  }
+
+  double final_count;
+  int colorKey_A = rand();
+  int colorKey_B = rand();
+
+
+  read_in_graph(gA, graph_fileA, labeled, srcs_gA, dsts_gA, labels_gA);
+  read_in_graph(gB, graph_fileB, labeled, srcs_gB, dsts_gB, labels_gB);
+
+  double elt = 0.0;
+  if ((timing || verbose) && main) {
+    elt = timer();
+  }
+
+  ifstream if_batch;
+  string line;
+  if_batch.open(motif_batchfile);
+  while (getline(if_batch, line))
+  {   
+    char* template_file = strdup(line.c_str());
+    read_in_graph(t, template_file, labeled, srcs_t, dsts_t, labels_t);
+
+    double full_countA = 0.0;
+    double full_countB = 0.0;
+
+    
+
+    if (do_outerloop)
+    {
+      int num_threads = omp_get_max_threads();
+      int iter = ceil( (double)iterations / (double)num_threads + 0.5);
+      
+      colorcount* graph_countA = new colorcount[num_threads];
+      colorcount* graph_countB = new colorcount[num_threads];
+      for (int i = 0; i < num_threads; ++i) {
+        graph_countA[i].init(gA, labels_gA, labeled, 
+                            calc_auto, do_gdd, do_vert, verbose);
+        graph_countB[i].init(gB, labels_gB, labeled, 
+                            calc_auto, do_gdd, do_vert, verbose);
+      }
+
+    
+      double** vert_counts;
+      if (do_gdd || do_vert)
+        vert_counts = new double*[num_threads];
+
+#pragma omp parallel reduction(+:full_countA)
+{
+      int tid = omp_get_thread_num();
+      full_countA += graph_countA[tid].do_full_count(&t, labels_t, iter, random_graphs, p, isCentered, colorKey_A);
+
+
+      if (do_gdd || do_vert)
+        vert_counts[tid] = graph_countA[tid].get_vert_counts();
+}
+#pragma omp parallel reduction(+:full_countB)
+{
+      int tid = omp_get_thread_num();
+      full_countB += graph_countB[tid].do_full_count(&t, labels_t, iter, random_graphs, p, isCentered, colorKey_B);
+      
+      if (do_gdd || do_vert)
+        vert_counts[tid] = graph_countB[tid].get_vert_counts();
+}
+
+      full_countA /= (double)num_threads;
+      full_countB /= (double)num_threads;
+      if (do_gdd || do_vert)
+      {
+        output out(vert_counts, num_threads, gA.num_vertices());
+        if (do_gdd) {
+          gdd_file = strdup(template_file);
+          strcat(gdd_file, ".gdd");
+          out.output_gdd(gdd_file);
+          free(gdd_file);
+        }
+        if (do_vert) {
+          vert_file = strdup(template_file);
+          strcat(vert_file, ".vert");
+          out.output_verts(vert_file);
+          free(vert_file);
+        }
+      }
+    }
+    else
+    {
+      colorcount graph_countA;
+      colorcount graph_countB;
+      graph_countA.init(gA, labels_gA, labeled, 
+                        calc_auto, do_gdd, do_vert, verbose);
+      graph_countB.init(gB, labels_gB, labeled, 
+                        calc_auto, do_gdd, do_vert, verbose);
+      full_countA += graph_countA.do_full_count(&t, labels_t, iterations, random_graphs, p, isCentered, colorKey_A);
+      full_countB += graph_countB.do_full_count(&t, labels_t, iterations, random_graphs, p, isCentered, colorKey_B);
+    }
+
+    // printf("fullcountA: %e\n", full_countA);
+    // printf("fullcountB: %e\n", full_countB);
+ 
+    // check count_automorphissms
+    // printf("num of automorphisms: %d\n", count_automorphisms(t));
+    final_count += full_countA * full_countB * count_automorphisms(t);
+    // printf("%e\n", final_count);
+
+
+    delete [] srcs_t;
+    delete [] dsts_t;
+    delete [] labels_t;
+    delete [] template_file;
+  }
+
+  if_batch.close();
+
+if ((timing || verbose) && main) {
+  elt = timer() - elt;
+  printf("Total time:\n\t%9.6lf seconds\n", elt);
+}
+
+  delete [] srcs_gA;
+  delete [] dsts_gA;
+  delete [] labels_gA;
+  delete [] srcs_gB;
+  delete [] dsts_gB;
+  delete [] labels_gB;
+
+  return final_count;
+                  
+
 }
 
 double run_compare_graphs(char* graph_fileA, char* graph_fileB, int motif, 
@@ -665,9 +845,18 @@ void sim2(char* graph_fileA, char* graph_fileB, int n, float p, float s, int klo
     for(int k = klow+1; k < khigh+2; ++k) {
       auto t1 = high_resolution_clock::now();
 
-      cout << "\n";
+      std::cout << "\n";
 
-      run_compare_graphs(graph_fileA, graph_fileB, k, false, false, iterations, true, true, false, true, p, true, isCentered);
+      double count = 0;
+
+      for(int j = 0; j < iterations; ++j) {
+          count += run_algorithm2(graph_fileA, graph_fileB, k, false, false, false, 1, false, true, false, true, p, true, isCentered);
+      }
+
+      count /= iterations;
+
+      std::cout << "\nStat:" << count;
+
 
       auto t2 = high_resolution_clock::now();
 
@@ -676,7 +865,7 @@ void sim2(char* graph_fileA, char* graph_fileB, int n, float p, float s, int klo
       duration<double, std::milli> ms_double = t2 - t1;
 
       std::cout << "\n" << ms_double.count() << "ms";
-      cout.flush();
+      std::cout.flush();
     }
 
 

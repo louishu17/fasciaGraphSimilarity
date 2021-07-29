@@ -1,0 +1,285 @@
+  // remove buffer so all outputs show up before crash
+  setbuf(stdout, NULL);
+
+  char* graph_fileA = NULL;
+  char* graph_fileB = NULL;
+  char* template_file = NULL;
+  char* batch_file = NULL;
+  int iterations = 1;
+  bool do_outerloop = false;
+  bool calculate_automorphism = true;
+  bool labeled = false;
+  bool do_gdd = false;
+  bool do_vert = false;
+  bool verbose = false;
+  bool compare_graphs = false;
+  bool sim_1 = false;
+  bool sim2_corr = false;
+  bool sim2_ind = false;
+  int klow = 0;
+  bool many_comp = false;
+  bool small_sample = false;
+  bool all_n_sample = false;
+  bool samp_from_lst = false;
+  bool count_trees = false;
+  int it_edges = 1;
+  int samp_nodes = 1000;
+  int samp_edges = 1000;
+  int motif = 0;
+  int n = 0;
+  float p = 0.0;
+  float s = 0.0;
+  int m = 0;
+  bool isCentered = false;
+  bool generateGraphs = false;
+  bool samp_first = false;
+
+  char c;
+  while ((c = getopt (argc, argv, "g:f:t:b:m:n:p:s:j:i:k:A:B:C:GDEFuWXqacdvrohlxyze")) != -1)
+  {
+    switch (c)
+    {
+      case 'h':
+        print_info(argv[0]);
+        break;
+      case 'l':
+        labeled = true;
+        break;
+      case 'g':
+        graph_fileA = strdup(optarg);
+        break;
+      case 'f':
+        graph_fileB = strdup(optarg);
+        break;
+      case 't':
+        template_file = strdup(optarg);
+        break;
+      case 'b':
+        batch_file = strdup(optarg);
+        break;
+      case 'm':
+        m = atoi(optarg);
+        break;
+      case 'n':
+        n = atoi(optarg);
+        break;
+      case 'p':
+        p = atof(optarg);
+        break;
+      case 's':
+        s = atof(optarg);
+        break;
+      case 'i':
+        iterations = atoi(optarg);
+        break;
+      case 'j':
+        klow = atoi(optarg);
+        break;
+      case 'k':
+        motif = atoi(optarg);
+        break;
+      case 'A':
+        it_edges = atoi(optarg);
+        break;
+      case 'B':
+        samp_nodes = atoi(optarg);
+        break;
+      case 'C':
+        samp_edges = atoi(optarg);
+        break;
+      case 'G':
+        generateGraphs = true;
+        break;
+      case 'D':
+        isCentered = true;
+        break;
+      case 'u':
+        sim_1 = true;
+        break;
+      case 'W':
+        sim2_corr = true;
+        break;
+      case 'X':
+        sim2_ind = true;
+        break;
+      case 'q':
+        compare_graphs = true;
+        break;
+      case 'x':
+        many_comp = true;
+        break;
+      case 'y':
+        small_sample = true;
+        break;
+      case 'e':
+        all_n_sample = true;
+        break;
+      case 'F':
+        samp_from_lst = true;
+        break;
+      case 'E':
+        samp_first = true;
+        break;
+      case 'z':
+        count_trees = true;
+        break;
+      case 'a':
+        calculate_automorphism = false; 
+        break;
+      case 'c':
+        do_vert = true;
+        break;
+      case 'd':
+        do_gdd = true;
+        break;
+      case 'o':
+        do_outerloop = true;
+        break;
+      case 'v':
+        verbose = true;
+        break;
+      case 'r':
+        timing = true;
+        break;
+      case '?':
+        if (optopt == 'g' || optopt == 't' || optopt == 'b' || optopt == 'i' || optopt == 'm')
+          fprintf (stderr, "Option -%c requires an argument.\n", optopt);
+        else if (isprint (optopt))
+          fprintf (stderr, "Unknown option `-%c'.\n", optopt);
+        else
+          fprintf (stderr, "Unknown option character `\\x%x'.\n",
+      optopt);
+        print_info(argv[0]);
+      default:
+        abort();
+    }
+  } 
+  if(!generateGraphs && !sim_1 && !sim2_corr && !sim2_ind && !many_comp && !small_sample && !count_trees && !all_n_sample && !samp_first && !samp_from_lst)
+  {
+    if(argc < 3)
+    {
+        printf("%d",sim_1);
+        print_info_short(argv[0]);
+    }
+
+    if (motif && (motif < 3 || motif > 10))
+    {
+      printf("\nMotif option must be between [3,10]\n");    
+      print_info(argv[0]);
+    }
+    else if (graph_fileA == NULL)
+    { 
+      printf("\nMust supply graph file\n");    
+      print_info(argv[0]);
+    }
+    else if (template_file == NULL && batch_file == NULL && !motif)
+    {
+      printf("\nMust supply template XOR batchfile or -m option\n");
+      print_info(argv[0]);
+    }  
+    else if (template_file != NULL && batch_file != NULL)
+    {
+      printf("\nMust only supply template file XOR batch file\n");
+      print_info(argv[0]);
+    }
+    else if (iterations < 1)
+    {
+      printf("\nNumber of iterations must be positive\n");    
+      print_info(argv[0]);
+    }
+  }
+
+  if(generateGraphs && !small_sample && !all_n_sample && !samp_from_lst) {
+    if(n && p && s && m) {
+      printf("%d %f %f %d", n, p, s, m);
+      generate_both_graphs(n, p, s, m);
+    } else {
+      printf("\nMissing Arguments\n");
+      printf("%d %f %f %d", n, p, s, m);
+    }
+  }
+  else if(sim_1) {
+    printf("%d %d %f", m, iterations, p);
+    sim1(m, iterations, p, true, isCentered);
+  }
+  else if(sim2_corr) {
+    const char folderCorr [] = "sim2_corr/";
+    char graphACorr [100];
+    sprintf(graphACorr, "%s%d_%dA_%.5f_%.5f_corr.txt", folderCorr, m, n, p, s);
+    char graphBCorr [100];
+    sprintf(graphBCorr, "%s%d_%dB_%.5f_%.5f_corr.txt", folderCorr, m, n, p, s);
+    if(n && p && s && m && iterations) {
+        printf("%d %f %f %d %d %d %d %d correlated", n, p, s, klow, motif, m, iterations, isCentered);
+        sim2(graphACorr, graphBCorr, n, p, s, klow, motif, m, iterations, isCentered);
+    }
+    else{
+      printf("\nMissing Arguments\n");
+      printf("%d %f %f %d %d %d %d", n, p, s, klow, motif, m, iterations);
+    }
+  }
+  else if(sim2_ind) {
+    const char folderInd [] = "sim2_ind/";
+    char graphAInd [100];
+    sprintf(graphAInd, "%s%d_%dA_%.5f_%.5f_ind.txt", folderInd, m, n, p, s);
+    char graphBInd [100];
+    sprintf(graphBInd, "%s%d_%dB_%.5f_%.5f_ind.txt", folderInd, m, n, p, s);
+    if(n && p && s && m && iterations) {
+        printf("%d %f %f %d %d %d %d %d indepedent", n, p, s, klow, motif, m, iterations, isCentered);
+        sim2(graphAInd, graphBInd, n, p, s, klow, motif, m, iterations, isCentered);
+    }
+    else{
+      printf("\nMissing Arguments\n");
+      printf("%d %f %f %d %d %d %d", n, p, s, klow, motif, m, iterations);
+    } 
+  }
+  else if(compare_graphs && motif) {
+    run_compare_graphs(graph_fileA, graph_fileB, motif,
+              do_vert, do_gdd, 
+              iterations, do_outerloop, calculate_automorphism, 
+              verbose, false, 0, true, isCentered);
+  }
+  else if(many_comp) {
+    all_comp(graph_fileA, do_vert, do_gdd, iterations, do_outerloop, calculate_automorphism, verbose);
+  }
+  else if (small_sample) {
+    samp_comp(graph_fileA, graph_fileB, motif, do_outerloop, iterations, it_edges, samp_nodes, samp_edges, calculate_automorphism, isCentered, generateGraphs);
+  }
+  else if (samp_first && (graph_fileB == NULL)) {
+    samp_graphs_lst(graph_fileA, iterations, it_edges, samp_nodes, samp_edges);
+  }
+  else if (samp_first && (graph_fileB != NULL)) {
+    samp_graphs(graph_fileA, iterations, it_edges, samp_nodes, samp_edges);
+    samp_graphs(graph_fileB, iterations, it_edges, samp_nodes, samp_edges);
+  }
+  else if (all_n_sample) {
+    samp_comp_all_n(graph_fileA, graph_fileB, do_outerloop, iterations, it_edges, samp_nodes, samp_edges, calculate_automorphism, isCentered, generateGraphs);
+  }
+  else if (samp_from_lst) {
+    samp_all_dcc(graph_fileA, do_outerloop, iterations, it_edges, samp_nodes, samp_edges, calculate_automorphism, isCentered);
+  }
+  else if (count_trees) {
+    trees_for_graphs(graph_fileA, iterations, do_outerloop, isCentered);
+  }
+  else if (motif)
+  {
+    run_motif(graph_fileA, motif, 
+              do_vert, do_gdd, 
+              iterations, do_outerloop, calculate_automorphism, 
+              verbose, false, 0, true, isCentered);
+  }
+  else if (template_file != NULL)
+  {
+    run_single(graph_fileA, template_file, labeled,                
+                do_vert, do_gdd,
+                iterations, do_outerloop, calculate_automorphism,
+                verbose, false, 0, true, isCentered);
+  }
+  else if (batch_file != NULL)
+  {
+    run_batch(graph_fileA, batch_file, labeled,
+                do_vert, do_gdd,
+                iterations, do_outerloop, calculate_automorphism,
+                verbose, false, 0, true, isCentered);
+  }
+
+  return 0;
