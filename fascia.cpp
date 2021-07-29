@@ -848,10 +848,13 @@ void sim2(char* graph_fileA, char* graph_fileB, int n, float p, float s, int klo
       std::cout << "\n";
 
       double count = 0;
-
+      
+#pragma omp parallel reduction(+:count)
+{
       for(int j = 0; j < iterations; ++j) {
           count += run_algorithm2(graph_fileA, graph_fileB, k, false, false, false, 1, false, true, false, true, p, true, isCentered);
       }
+}
 
       count /= iterations;
 
