@@ -1555,7 +1555,7 @@ int main(int argc, char** argv)
     } 
   }
   else if(compare_graphs && motif) {
-    run_algorithm2(graph_fileA, graph_fileB, motif, labeled,
+    run_compare_graphs(graph_fileA, graph_fileB, motif,
               do_vert, do_gdd, 
               iterations, do_outerloop, calculate_automorphism, 
               verbose, false, 0, true, isCentered);
