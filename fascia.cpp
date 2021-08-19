@@ -242,7 +242,7 @@ double run_single(char* graph_file, char* template_file, bool labeled,
     }
   }
 
-  printf("%e", full_count);
+  // printf("%e", full_count);
 
   if ((timing || verbose) && main) {
     elt = timer() - elt;
@@ -343,6 +343,8 @@ std::vector<double> run_batch(char* graph_file, char* batch_file, bool labeled,
                         calc_auto, do_gdd, do_vert, verbose);
       full_count += graph_count.do_full_count(&t, labels_t, iterations, random_graphs, p, isCentered, colorKey);
     }
+
+    // printf("\n");
 
     // printf("%e\n", full_count);  
     // check count_automorphissms
@@ -666,11 +668,10 @@ void generate_graph(int n, float p, char filename[100])
 }
 
 double calculateExpectedValue(int n, float p, int K, int aut) {
-    printf("%d %f %d %d", n, p, K, aut);
+    // printf("%d %f %d %d", n, p, K, aut);
     double fac = 1;
 
     for(int i = n; i > n - K - 1; i--) {
-        printf("%e", fac);
         fac *= i;
     }
 
@@ -680,6 +681,11 @@ double calculateExpectedValue(int n, float p, int K, int aut) {
 }
 
 void sim1(int m, int iterations, float p, bool random_graphs, bool isCentered) {
+
+    using std::chrono::high_resolution_clock;
+    using std::chrono::duration_cast;
+    using std::chrono::duration;
+    using std::chrono::milliseconds;
     //runs simulation 1
     Graph t;
     int* srcs_t;
@@ -711,44 +717,57 @@ void sim1(int m, int iterations, float p, bool random_graphs, bool isCentered) {
     std::vector<double> expected_counts;
     double val;
     double expectedVal;
+    double total_time;
+    double avg_time;
 
     cout << "\n";
 
     for (const int& i : m_sizes) {
       val = 0;
       expectedVal = 0;
-      cout << i << "\n";
-      expectedVal = calculateExpectedValue(i, p, K, aut);
-      cout << "\nExpected Value: " << expectedVal << "\n";
-      cout << "[";
+      // cout << i << "\n";
+      // expectedVal = calculateExpectedValue(i, p, K, aut);
+      // cout << "\nExpected Value: " << expectedVal << "\n";
+      // cout << "[";
       for(int j = 0; j < m; ++j) {
         char graph_file [100];
         sprintf (graph_file, "graphs/%d.txt", i);
         generate_graph(i, p, graph_file);
-        val = val + run_single(graph_file, tree_file, false, false, false, iterations, true, true, false, random_graphs, p, false, isCentered);
-        cout << ", ";
+        auto a1 = high_resolution_clock::now();
+        val = val + run_single(graph_file, tree_file, false, false, false, iterations, false, true, false, random_graphs, p, false, isCentered);
+
+        auto a2 = high_resolution_clock::now();
+
+        auto ms_int = duration_cast<milliseconds>(a2-a1);
+
+        duration<double, std::milli> ms_double = a2 - a1;
+
+        total_time += ms_double.count();
+        // cout << ", ";
         cout.flush();   
       }
       val = val / m;
+      avg_time = total_time / m;
       fin_counts.push_back(val);
-      cout<<'\b';
-      cout<<'\b';
-      cout<<"]\n";
+      // cout<<'\b';
+      // cout<<'\b';
+      // cout<<"]\n";
+      cout << avg_time << "\n";
       cout.flush();      
-      expected_counts.push_back(expectedVal * r);
+      // expected_counts.push_back(expectedVal * r);
     }
 
-    cout << '[';
-    for (const double& d : fin_counts) {
-      cout << d << ',';
-    }
-    cout << "]\n";
+    // cout << '[';
+    // for (const double& d : fin_counts) {
+    //   cout << d << ',';
+    // }
+    // cout << "]\n";
 
-    cout << '[';
-    for (const double& d : expected_counts) {
-      cout << d << ',';
-    }
-    cout << "]\n";
+    // cout << '[';
+    // for (const double& d : expected_counts) {
+    //   cout << d << ',';
+    // }
+    // cout << "]\n";
     cout.flush();
 }
 
@@ -853,7 +872,7 @@ void sim2(char* graph_fileA, char* graph_fileB, int n, float p, float s, int klo
     for(int k = klow+1; k < khigh+2; ++k) {
       auto t1 = high_resolution_clock::now();
 
-      std::cout << "\n";
+      // std::cout << "\n";
 
       double count = 0.0;
 
@@ -867,13 +886,12 @@ void sim2(char* graph_fileA, char* graph_fileB, int n, float p, float s, int klo
         count /= iterations;
       }
       else {
-        count = run_compare_graphs(graph_fileA, graph_fileB, k, false, false, iterations, true, true, false, true, p, false, isCentered);
+        count = run_compare_graphs(graph_fileA, graph_fileB, k, false, false, iterations, false, true, false, true, p, false, isCentered);
       }
 
 // }
 
-
-      printf("\n%e\n", count);
+      printf("%e, ", count);
 
 
       auto t2 = high_resolution_clock::now();
@@ -882,7 +900,7 @@ void sim2(char* graph_fileA, char* graph_fileB, int n, float p, float s, int klo
 
       duration<double, std::milli> ms_double = t2 - t1;
 
-      std::cout << "\n" << ms_double.count() << "ms";
+      // std::cout << "\n" << ms_double.count() << "ms";
       std::cout.flush();
     }
 
@@ -1531,7 +1549,7 @@ int main(int argc, char** argv)
     char graphBCorr [100];
     sprintf(graphBCorr, "%s%d_%dB_%.5f_%.5f_corr.txt", folderCorr, m, n, p, s);
     if(n && p && s && m && iterations) {
-        printf("%d %f %f %d %d %d %d %d correlated Sophie: %d", n, p, s, klow, motif, m, iterations, isCentered, sophie);
+        // printf("%d %f %f %d %d %d %d %d correlated Sophie: %d", n, p, s, klow, motif, m, iterations, isCentered, sophie);
         sim2(graphACorr, graphBCorr, n, p, s, klow, motif, m, iterations, isCentered, sophie);
     }
     else{
@@ -1546,7 +1564,7 @@ int main(int argc, char** argv)
     char graphBInd [100];
     sprintf(graphBInd, "%s%d_%dB_%.5f_%.5f_ind.txt", folderInd, m, n, p, s);
     if(n && p && s && m && iterations) {
-        printf("%d %f %f %d %d %d %d %d indepedent Sophie: %d", n, p, s, klow, motif, m, iterations, isCentered, sophie);
+        // printf("%d %f %f %d %d %d %d %d indepedent Sophie: %d", n, p, s, klow, motif, m, iterations, isCentered, sophie);
         sim2(graphAInd, graphBInd, n, p, s, klow, motif, m, iterations, isCentered, sophie);
     }
     else{
@@ -1554,11 +1572,20 @@ int main(int argc, char** argv)
       printf("%d %f %f %d %d %d %d", n, p, s, klow, motif, m, iterations);
     } 
   }
-  else if(compare_graphs && motif) {
-    run_algorithm2(graph_fileA, graph_fileB, motif, labeled,
+  else if(compare_graphs && motif && sophie) {
+    if(sophie) {
+        run_algorithm2(graph_fileA, graph_fileB, motif, labeled,
               do_vert, do_gdd, 
               iterations, do_outerloop, calculate_automorphism, 
               verbose, false, 0, true, isCentered);
+
+    } else {
+      run_compare_graphs(graph_fileA, graph_fileB, motif,
+              do_vert, do_gdd, 
+              iterations, do_outerloop, calculate_automorphism, 
+              verbose, false, 0, true, isCentered);
+    }
+
   }
   else if(many_comp) {
     all_comp(graph_fileA, do_vert, do_gdd, iterations, do_outerloop, calculate_automorphism, verbose);
