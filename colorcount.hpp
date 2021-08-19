@@ -191,12 +191,13 @@ private:
       int color = r[0] % num_colors;
       colors_g[v] = color;
     }
+}
 
+    // printf("\n");
     // for(int i = 0; i < num_verts; i++) {
     //   printf("%d ", colors_g[i]);
     // }
     // printf("\n");
-}
 
     // start doing the counting, starting at bottom of partition tree
     //  then go through all of the subtemplates except for the primary
