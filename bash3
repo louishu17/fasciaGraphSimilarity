@@ -1,0 +1,22 @@
+#!/bin/bash
+
+./fascia -q -g samp_run/e1_MIT8.txt -f samp_run/e1_MIT8.txt -k 5 -i 200
+echo ","
+./fascia -q -g samp_run/e1_MIT8.txt -f samp_run/e2_MIT8.txt -k 5 -i 200
+echo ","
+./fascia -q -g samp_run/e1_MIT8.txt -f samp_run/e1_UChicago30.txt -k 5 -i 200
+echo ","
+./fascia -q -g samp_run/e1_MIT8.txt -f samp_run/e2_UChicago30.txt -k 5 -i 200
+echo ","
+./fascia -q -g samp_run/e2_MIT8.txt -f samp_run/e2_MIT8.txt -k 5 -i 200
+echo ","
+./fascia -q -g samp_run/e2_MIT8.txt -f samp_run/e1_UChicago30.txt -k 5 -i 200
+echo ","
+./fascia -q -g samp_run/e2_MIT8.txt -f samp_run/e2_UChicago30.txt -k 5 -i 200
+echo ","
+./fascia -q -g samp_run/e1_UChicago30.txt -f samp_run/e1_UChicago30.txt -k 5 -i 200
+echo ","
+./fascia -q -g samp_run/e1_UChicago30.txt -f samp_run/e2_UChicago30.txt -k 5 -i 200
+echo ","
+./fascia -q -g samp_run/e2_UChicago30.txt -f samp_run/e2_UChicago30.txt -k 5 -i 200
+echo ","
