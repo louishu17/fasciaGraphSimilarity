@@ -881,12 +881,12 @@ void sim2(char* graph_fileA, char* graph_fileB, int n, float p, float s, int klo
       if(Sophie) {
         for(int j = 0; j < iterations; ++j) {
           // printf("Total: %e\n", count);
-          count += run_algorithm2(graph_fileA, graph_fileB, k, false, false, false, 1, false, true, false, true, p, true, isCentered);
+          count += run_algorithm2(graph_fileA, graph_fileB, k, false, false, false, 1, false, true, false, true, p*s, true, isCentered);
         }
         count /= iterations;
       }
       else {
-        count = run_compare_graphs(graph_fileA, graph_fileB, k, false, false, iterations, false, true, false, true, p, false, isCentered);
+        count = run_compare_graphs(graph_fileA, graph_fileB, k, false, false, iterations, false, true, false, true, p*s, false, isCentered);
       }
 
 // }
@@ -1331,6 +1331,7 @@ void trees_for_graphs(string file_list, int iterations,
 int main(int argc, char** argv)
 {
   // remove buffer so all outputs show up before crash
+  srand ( time(NULL) );
   setbuf(stdout, NULL);
 
   char* graph_fileA = NULL;
